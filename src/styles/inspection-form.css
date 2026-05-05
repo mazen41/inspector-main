@@ -1,0 +1,1244 @@
+/* Inspection Form Styles */
+
+/* Section transitions and animations */
+.inspection-section {
+  transition: all 0.3s ease-in-out;
+}
+
+.section-header {
+  transition: all 0.2s ease-in-out;
+}
+
+.section-header:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Progress bar animations */
+.form-progress .progress-bar {
+  transition: width 0.5s ease-in-out;
+}
+
+/* Field item hover effects */
+.field-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.field-item:hover {
+  transform: translateY(-1px);
+}
+
+/* Section field container */
+.section-fields {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Responsive grid improvements */
+@media (min-width: 768px) {
+  .inspection-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .inspection-form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+  }
+}
+
+/* Field width utilities */
+.field-width-full {
+  grid-column: 1 / -1;
+}
+
+.field-width-half {
+  grid-column: span 1;
+}
+
+@media (min-width: 1280px) {
+  .field-width-third {
+    grid-column: span 1;
+  }
+  
+  .field-width-quarter {
+    grid-column: span 1;
+  }
+}
+
+/* Status indicator animations */
+.status-indicator {
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.completed {
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Progress circle animation */
+.progress-circle {
+  transition: all 0.3s ease-in-out;
+}
+
+.progress-circle:hover {
+  transform: scale(1.05);
+}
+
+/* Section completion states */
+.section-not-started {
+  opacity: 0.8;
+}
+
+.section-in-progress {
+  border-left: 4px solid #f59e0b;
+}
+
+.section-completed {
+  border-left: 4px solid #10b981;
+}
+
+.section-error {
+  border-left: 4px solid #ef4444;
+}
+
+/* Form validation improvements */
+.field-error {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Loading states */
+.form-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.form-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Sticky form progress */
+.form-progress.sticky {
+  position: sticky;
+  top: 1rem;
+  z-index: 10;
+}
+
+/* Mobile optimizations */
+@media (max-width: 767px) {
+  .section-header {
+    padding: 0.75rem;
+  }
+  
+  .section-fields {
+    padding: 1rem;
+  }
+  
+  .form-progress {
+    padding: 1rem;
+  }
+  
+  .progress-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  /* Prevent horizontal overflow - CRITICAL FIX */
+  .inspection-fields-renderer {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .field-item {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: breakrem;
+  }
+
+  /* Responsive text sizes */
+  .section-header h3 {
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  /* Ensure buttons don't overflow */
+  .section-header .flex {
+    flex-wrap: wrap;
+  }
+
+  /* Better modal sizing */
+  .fixed .bg-white {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .section-header {
+    padding: 0.5rem;
+  }
+  
+  .section-fields {
+    padding: 0.75rem;
+  }
+
+  .progress-circle {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+  }
+
+  /* Stack elements vertically on very small screens */
+  .section-header .flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Smaller gaps */
+  .grid {
+    gap: 0.75rem;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 767px) and (orientation: landscape) {
+  .section-header {
+    padding: 0.5rem 1rem;
+  }
+  
+  .progress-circle {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+/* Inspection List Styles */
+.inspection-list {
+  overflow-x: hidden;
+}
+
+.inspection-list-item {
+  min-width: 0;
+}
+
+.inspection-list-item .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspection-list-item .break-words {
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Mobile-specific inspection list styles */
+@media (max-width: 767px) {
+  .inspection-list-header {
+    padding: 1rem;
+  }
+  
+  .inspection-list-filters {
+    padding: 0.75rem;
+  }
+  
+  .inspection-list-item {
+    padding: 1rem;
+  }
+  
+  .inspection-list-pagination {
+    padding: 1rem;
+  }
+  
+  /* Ensure search input doesn't overflow */
+  .inspection-search-input {
+    min-width: 0;
+    width: 100%;
+  }
+  
+  /* Better button sizing on mobile */
+  .inspection-action-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Save Status Indicator Styles */
+.save-status-indicator {
+  display: flex;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+/* Status state variations */
+.save-status-indicator.saving {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #2563eb;
+}
+
+.save-status-indicator.saved {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #059669;
+}
+
+.save-status-indicator.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+}
+
+.save-status-indicator.unsaved-changes {
+  background-color: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #d97706;
+}
+
+.save-status-indicator.last-saved {
+  background-color: rgba(107, 114, 128, 0.05);
+  border: 1px solid rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+/* Icon animations */
+.save-status-indicator .status-icon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.save-status-indicator.saving .status-icon {
+  animation: savingPulse 1.5s ease-in-out infinite;
+}
+
+.save-status-indicator.saved .status-icon {
+  animation: savedSuccess 0.6s ease-in-out;
+}
+
+.save-status-indicator.error .status-icon {
+  animation: errorShake 0.5s ease-in-out;
+}
+
+.save-status-indicator.unsaved-changes .status-icon {
+  animation: unsavedBlink 2s ease-in-out infinite;
+}
+
+/* Status text styles */
+.save-status-indicator .status-text {
+  font-weight: 500;
+  flex: 1;
+}
+
+.save-status-indicator .status-timestamp {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
+.save-status-indicator .status-error-detail {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  margin-top: 0.125rem;
+  line-height: 1.2;
+}
+
+/* Fade-in animation for success messages */
+.save-status-indicator.fade-in {
+  animation: fadeInStatus 0.4s ease-in-out;
+}
+
+.save-status-indicator.fade-out {
+  animation: fadeOutStatus 0.4s ease-in-out forwards;
+}
+
+/* Status animations */
+@keyframes savingPulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes savedSuccess {
+  0% { 
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% { 
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+@keyframes unsavedBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes fadeInStatus {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOutStatus {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 767px) {
+  .save-status-indicator {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+    border-radius: 0.25rem;
+  }
+  
+  .save-status-indicator .status-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-right: 0.375rem;
+  }
+  
+  .save-status-indicator .status-timestamp {
+    font-size: 0.6875rem;
+    margin-left: 0.375rem;
+  }
+  
+  .save-status-indicator .status-error-detail {
+    font-size: 0.6875rem;
+  }
+  
+  /* Stack error details on mobile for better readability */
+  .save-status-indicator.error {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .save-status-indicator.error .status-icon {
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .save-status-indicator {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+  
+  .save-status-indicator .status-timestamp {
+    font-size: 0.6875rem;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .save-status-indicator {
+    border-width: 2px;
+  }
+  
+  .save-status-indicator.saving {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-color: #2563eb;
+  }
+  
+  .save-status-indicator.saved {
+    background-color: rgba(16, 185, 129, 0.2);
+    border-color: #059669;
+  }
+  
+  .save-status-indicator.error {
+    background-color: rgba(239, 68, 68, 0.2);
+    border-color: #dc2626;
+  }
+  
+  .save-status-indicator.unsaved-changes {
+    background-color: rgba(245, 158, 11, 0.2);
+    border-color: #d97706;
+  }
+  
+  .save-status-indicator.last-saved {
+    background-color: rgba(107, 114, 128, 0.1);
+    border-color: #6b7280;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .save-status-indicator {
+    transition: background-color 0.2s ease-in-out;
+  }
+  
+  .save-status-indicator.saving .status-icon,
+  .save-status-indicator.saved .status-icon,
+  .save-status-indicator.error .status-icon,
+  .save-status-indicator.unsaved-changes .status-icon,
+  .save-status-indicator.fade-in,
+  .save-status-indicator.fade-out {
+    animation: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .save-status-indicator.saving {
+    background-color: rgba(96, 165, 250, 0.15);
+    border-color: rgba(96, 165, 250, 0.3);
+    color: #60a5fa;
+  }
+  
+  .save-status-indicator.saved {
+    background-color: rgba(52, 211, 153, 0.15);
+    border-color: rgba(52, 211, 153, 0.3);
+    color: #34d399;
+  }
+  
+  .save-status-indicator.error {
+    background-color: rgba(248, 113, 113, 0.15);
+    border-color: rgba(248, 113, 113, 0.3);
+    color: #f87171;
+  }
+  
+  .save-status-indicator.unsaved-changes {
+    background-color: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.3);
+    color: #fbbf24;
+  }
+  
+  .save-status-indicator.last-saved {
+    background-color: rgba(156, 163, 175, 0.1);
+    border-color: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+  }
+}
+
+/* Focus styles for accessibility */
+.save-status-indicator:focus-within {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Compact variant for header usage */
+.save-status-indicator.compact {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+}
+
+.save-status-indicator.compact .status-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.375rem;
+}
+
+.save-status-indicator.compact .status-timestamp {
+  font-size: 0.625rem;
+  margin-left: 0.375rem;
+}
+
+/* Inline variant for minimal space usage */
+.save-status-indicator.inline {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.save-status-indicator.inline .status-icon {
+  margin-right: 0.25rem;
+}
+
+/* Success message specific styles */
+.save-status-indicator .success-message {
+  display: flex;
+  align-items: center;
+  animation: successSlideIn 0.4s ease-out;
+}
+
+@keyframes successSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Error retry button styles */
+.save-status-indicator .retry-button {
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.6875rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 0.25rem;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.save-status-indicator .retry-button:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.save-status-indicator .retry-button:active {
+  transform: translateY(1px);
+}
+
+/* Loading dots animation for saving state */
+.save-status-indicator.saving .loading-dots::after {
+  content: '';
+  animation: loadingDots 1.5s infinite;
+}
+
+@keyframes loadingDots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+/* Accessibility improvements */
+.save-status-indicator[role="status"] {
+  /* Ensure screen readers announce status changes */
+  position: relative;
+}
+
+.save-status-indicator .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Print styles */
+@media print {
+  .save-status-indicator {
+    background: none !important;
+    border: 1px solid #000 !important;
+    color: #000 !important;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .save-status-indicator .status-icon {
+    display: none;
+  }
+  
+  .save-status-indicator .retry-button {
+    display: none;
+  }
+}
+
+/* Manual Save Button Styles */
+.manual-save-button {
+  /* Base positioning and layout */
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  min-width: 120px;
+  
+  /* Smooth transitions for all state changes */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Enhanced shadow for floating effect */
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 
+              0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Focus styles for accessibility */
+  outline: none;
+  
+  /* Default desktop positioning */
+  bottom: 1.5rem;
+  right: 1.5rem;
+}
+
+/* Hover effects for desktop */
+@media (hover: hover) {
+  .manual-save-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.15), 
+                0 8px 16px -4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Focus styles for keyboard navigation */
+.manual-save-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Active state for touch feedback */
+.manual-save-button:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.1s ease-in-out;
+}
+
+/* Button state variations */
+.manual-save-button.disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.manual-save-button.enabled {
+  background-color: #2563eb;
+  color: white;
+}
+
+.manual-save-button.enabled:hover {
+  background-color: #1d4ed8;
+}
+
+.manual-save-button.enabled:active {
+  background-color: #1e40af;
+}
+
+.manual-save-button.saving {
+  background-color: #3b82f6;
+  color: white;
+  cursor: wait;
+}
+
+.manual-save-button.saved {
+  background-color: #10b981;
+  color: white;
+  animation: saveSuccess 0.6s ease-in-out;
+}
+
+.manual-save-button.error {
+  background-color: #ef4444;
+  color: white;
+  animation: saveError 0.5s ease-in-out;
+}
+
+.manual-save-button.error:hover {
+  background-color: #dc2626;
+}
+
+/* Pulse animation for unsaved changes */
+.manual-save-button.has-changes {
+  animation: unsavedPulse 2s infinite;
+}
+
+/* Button animations */
+@keyframes saveSuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes saveError {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+@keyframes unsavedPulse {
+  0%, 100% { 
+    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  50% { 
+    box-shadow: 0 10px 25px -3px rgba(37, 99, 235, 0.3), 
+                0 4px 6px -2px rgba(37, 99, 235, 0.2);
+  }
+}
+
+/* Slide-in animation when button appears */
+.manual-save-button.slide-in {
+  animation: slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInFromRight {
+  0% {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Loading spinner animation */
+.manual-save-button .loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Tablet responsive positioning */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .manual-save-button {
+    bottom: 2rem;
+    right: 2rem;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.9375rem;
+    min-width: 140px;
+    min-height: 48px;
+    border-radius: 0.625rem;
+  }
+  
+  /* Tablet landscape adjustments */
+  @media (orientation: landscape) {
+    .manual-save-button {
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 0.75rem 1rem;
+      min-width: 130px;
+      min-height: 44px;
+    }
+  }
+  
+  /* Tablet portrait adjustments */
+  @media (orientation: portrait) {
+    .manual-save-button {
+      bottom: 2.5rem;
+      right: 2.5rem;
+      padding: 1rem 1.375rem;
+      min-width: 150px;
+      min-height: 50px;
+    }
+  }
+}
+
+/* Desktop responsive positioning */
+@media (min-width: 1024px) {
+  .manual-save-button {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    min-width: 120px;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 767px) {
+  .manual-save-button {
+    /* Center bottom positioning for thumb access */
+    bottom: 1rem;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    
+    /* Larger touch target - minimum 44px for accessibility */
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    min-width: 160px;
+    min-height: 52px;
+    
+    /* Enhanced shadow for mobile */
+    box-shadow: 0 8px 20px -2px rgba(0, 0, 0, 0.15), 
+                0 4px 8px -2px rgba(0, 0, 0, 0.1);
+    
+    /* Improved border radius for mobile */
+    border-radius: 0.75rem;
+  }
+  
+  /* Keyboard visibility adjustments */
+  .manual-save-button.keyboard-visible {
+    bottom: 2rem;
+    transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Mobile hover effects (touch) */
+  .manual-save-button:active {
+    transform: translateX(-50%) translateY(1px) scale(0.98);
+    transition: transform 0.1s ease-in-out;
+  }
+  
+  /* Mobile slide-in animation */
+  .manual-save-button.slide-in {
+    animation: slideInFromBottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  @keyframes slideInFromBottom {
+    0% {
+      transform: translateX(-50%) translateY(100px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  /* Mobile pulse animation adjustment */
+  .manual-save-button.has-changes {
+    animation: unsavedPulseMobile 2s infinite;
+  }
+  
+  @keyframes unsavedPulseMobile {
+    0%, 100% { 
+      box-shadow: 0 8px 20px -2px rgba(0, 0, 0, 0.15), 
+                  0 4px 8px -2px rgba(0, 0, 0, 0.1);
+    }
+    50% { 
+      box-shadow: 0 8px 20px -2px rgba(37, 99, 235, 0.4), 
+                  0 4px 8px -2px rgba(37, 99, 235, 0.3);
+    }
+  }
+  
+  /* Better focus styles for mobile */
+  .manual-save-button:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 3px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .manual-save-button {
+    bottom: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.9375rem;
+    min-width: 140px;
+    min-height: 48px;
+    border-radius: 0.625rem;
+  }
+  
+  /* Adjust keyboard visibility for smaller screens */
+  .manual-save-button.keyboard-visible {
+    bottom: 1.5rem;
+  }
+  
+  /* Smaller icons for extra small screens */
+  .manual-save-button .lucide {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 767px) and (orientation: landscape) {
+  .manual-save-button {
+    bottom: 0.75rem;
+    right: 1rem;
+    left: auto;
+    transform: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    min-width: 120px;
+    min-height: 44px;
+    border-radius: 0.5rem;
+  }
+  
+  /* Keyboard visibility in landscape */
+  .manual-save-button.keyboard-visible {
+    bottom: 1rem;
+    right: 0.5rem;
+  }
+  
+  .manual-save-button:active {
+    transform: translateY(1px) scale(0.98);
+  }
+  
+  .manual-save-button.slide-in {
+    animation: slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Landscape pulse animation */
+  .manual-save-button.has-changes {
+    animation: unsavedPulseLandscape 2s infinite;
+  }
+  
+  @keyframes unsavedPulseLandscape {
+    0%, 100% { 
+      box-shadow: 0 6px 15px -2px rgba(0, 0, 0, 0.1), 
+                  0 3px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    50% { 
+      box-shadow: 0 6px 15px -2px rgba(37, 99, 235, 0.3), 
+                  0 3px 6px -2px rgba(37, 99, 235, 0.2);
+    }
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .manual-save-button {
+    border: 2px solid;
+  }
+  
+  .manual-save-button.disabled {
+    border-color: #6b7280;
+  }
+  
+  .manual-save-button.enabled {
+    border-color: #1e40af;
+  }
+  
+  .manual-save-button.saving {
+    border-color: #2563eb;
+  }
+  
+  .manual-save-button.saved {
+    border-color: #059669;
+  }
+  
+  .manual-save-button.error {
+    border-color: #dc2626;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .manual-save-button {
+    transition: background-color 0.2s ease-in-out;
+  }
+  
+  .manual-save-button:hover {
+    transform: none;
+  }
+  
+  .manual-save-button:active {
+    transform: none;
+  }
+  
+  .manual-save-button.slide-in,
+  .manual-save-button.has-changes,
+  .manual-save-button.saved,
+  .manual-save-button.error {
+    animation: none;
+  }
+  
+  .manual-save-button .loading-spinner {
+    animation: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .manual-save-button.disabled {
+    background-color: #374151;
+    color: #9ca3af;
+  }
+  
+  .manual-save-button.enabled {
+    background-color: #3b82f6;
+    color: white;
+  }
+  
+  .manual-save-button.enabled:hover {
+    background-color: #2563eb;
+  }
+  
+  .manual-save-button.saving {
+    background-color: #60a5fa;
+    color: white;
+  }
+  
+  .manual-save-button.saved {
+    background-color: #10b981;
+    color: white;
+  }
+  
+  .manual-save-button.error {
+    background-color: #f87171;
+    color: white;
+  }
+}
+
+/* Safe area insets for devices with notches */
+@supports (padding: max(0px)) {
+  @media (max-width: 767px) {
+    .manual-save-button {
+      bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+    
+    .manual-save-button.keyboard-visible {
+      bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1rem));
+    }
+  }
+  
+  @media (max-width: 767px) and (orientation: landscape) {
+    .manual-save-button {
+      right: max(1rem, env(safe-area-inset-right));
+      bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+    
+    .manual-save-button.keyboard-visible {
+      right: max(0.5rem, env(safe-area-inset-right));
+      bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+  }
+  
+  /* Tablet safe area support */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .manual-save-button {
+      right: max(2rem, env(safe-area-inset-right));
+      bottom: max(2rem, env(safe-area-inset-bottom));
+    }
+    
+    @media (orientation: landscape) {
+      .manual-save-button {
+        right: max(1.5rem, env(safe-area-inset-right));
+        bottom: max(1.5rem, env(safe-area-inset-bottom));
+      }
+    }
+  }
+}
+
+/* Viewport height based adjustments */
+@media (max-height: 600px) {
+  .manual-save-button {
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+    min-height: 40px;
+  }
+  
+  @media (max-width: 767px) {
+    .manual-save-button {
+      bottom: 0.5rem;
+      min-width: 120px;
+      min-height: 42px;
+    }
+    
+    .manual-save-button.keyboard-visible {
+      bottom: 1rem;
+    }
+  }
+}
+
+/* Very tall screens adjustments */
+@media (min-height: 900px) {
+  @media (max-width: 767px) {
+    .manual-save-button {
+      bottom: 1.5rem;
+    }
+    
+    .manual-save-button.keyboard-visible {
+      bottom: 2.5rem;
+    }
+  }
+  
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .manual-save-button {
+      bottom: 2.5rem;
+      right: 2.5rem;
+    }
+  }
+}
+
+/* Device rotation transition smoothing */
+@media (max-width: 1023px) {
+  .manual-save-button {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Print styles */
+@media print {
+  .manual-save-button {
+    display: none;
+  }
+  
+  .form-progress,
+  .section-header {
+    break-inside: avoid;
+  }
+  
+  .inspection-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  
+  .inspection-list {
+    break-inside: avoid;
+  }
+}

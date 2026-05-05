@@ -1,0 +1,82 @@
+{
+  "buttons": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "add": "إضافة",
+    "submit": "إرسال",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "search": "بحث",
+    "filter": "تصفية",
+    "clear": "مسح",
+    "refresh": "تحديث",
+    "upload": "رفع",
+    "download": "تحميل",
+    "view": "عرض",
+    "update": "تحديث",
+    "openSidebar": "فتح الشريط الجانبي",
+    "openUserMenu": "فتح قائمة المستخدم",
+    "signOut": "تسجيل الخروج",
+    "retry": "إعادة المحاولة"
+  },
+  "status": {
+    "loading": "جاري التحميل...",
+    "success": "نجح",
+    "error": "خطأ",
+    "warning": "تحذير",
+    "info": "معلومات",
+    "pending": "في الانتظار",
+    "completed": "مكتمل",
+    "cancelled": "ملغي",
+    "active": "نشط",
+    "inactive": "غير نشط"
+  },
+  "messages": {
+    "noData": "لا توجد بيانات متاحة",
+    "noResults": "لم يتم العثور على نتائج",
+    "confirmDelete": "هل أنت متأكد من أنك تريد حذف هذا العنصر؟",
+    "unsavedChanges": "لديك تغييرات غير محفوظة. هل أنت متأكد من أنك تريد المغادرة؟",
+    "operationSuccess": "تمت العملية بنجاح",
+    "operationFailed": "فشلت العملية. يرجى المحاولة مرة أخرى.",
+    "networkError": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
+    "unauthorized": "غير مخول لك تنفيذ هذا الإجراء",
+    "sessionExpired": "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.",
+    "validationErrors": "يرجى إصلاح الأخطاء التالية:",
+    "validating": "جاري التحقق...",
+    "formValid": "النموذج صحيح",
+    "formHasErrors": "النموذج يحتوي على أخطاء",
+    "moreErrors": "... و {{count}} خطأ إضافي{{plural}}"
+  },
+  "accessibility": {
+    "required": "مطلوب",
+    "loading": "جاري التحميل: {{text}}",
+    "closeDialog": "إغلاق {{title}}",
+    "closeModal": "إغلاق الحوار"
+  },
+  "labels": {
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "address": "العنوان",
+    "date": "التاريخ",
+    "time": "الوقت",
+    "status": "الحالة",
+    "type": "النوع",
+    "description": "الوصف",
+    "notes": "ملاحظات",
+    "total": "المجموع",
+    "amount": "المبلغ",
+    "quantity": "الكمية",
+    "price": "السعر"
+  },
+  "appName": "لوحة تحكم فاحص السيارات",
+  "appVersion": "لوحة تحكم فاحص السيارات الإصدار 1.0",
+  "roles": {
+    "carInspector": "فاحص السيارات"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "title": "المدفوعات",
+  "list": {
+    "noPayments": "لم يتم العثور على مدفوعات",
+    "tryAdjustingFilters": "جرب تعديل المرشحات",
+    "noRecordsYet": "ليس لديك سجلات دفع بعد",
+    "failedToLoad": "فشل في تحميل المدفوعات"
+  },
+  "status": {
+    "pending": "في الانتظار",
+    "completed": "مكتمل",
+    "paid": "مدفوع",
+    "failed": "فشل",
+    "cancelled": "ملغي",
+    "refunded": "مسترد"
+  },
+  "types": {
+    "earning": "الأرباح",
+    "payment": "المدفوعات",
+    "adjustment": "التعديلات"
+  },
+  "filters": {
+    "type": "النوع",
+    "allTypes": "جميع الأنواع",
+    "status": "الحالة",
+    "allStatuses": "جميع الحالات",
+    "fromDate": "من تاريخ",
+    "toDate": "إلى تاريخ",
+    "clearFilters": "مسح المرشحات"
+  },
+  "fields": {
+    "paymentId": "معرف الدفع",
+    "amount": "المبلغ",
+    "date": "التاريخ",
+    "created": "تم الإنشاء",
+    "method": "الطريقة",
+    "paymentMethod": "طريقة الدفع",
+    "status": "الحالة",
+    "type": "النوع",
+    "description": "الوصف",
+    "notes": "الملاحظات",
+    "inspectionId": "معرف الفحص",
+    "transactionReference": "مرجع المعاملة"
+  },
+  "summary": {
+    "totalEarnings": "إجمالي الأرباح",
+    "pendingPayments": "المدفوعات المعلقة",
+    "thisMonthEarnings": "أرباح هذا الشهر",
+    "currentBalance": "الرصيد الحالي",
+    "paidThisMonth": "المدفوع هذا الشهر",
+    "averagePayment": "متوسط الدفع",
+    "awaitingPayout": "في انتظار الدفع",
+    "allTimeEarnings": "إجمالي الأرباح على الإطلاق",
+    "currentMonthEarnings": "أرباح الشهر الحالي",
+    "availableBalance": "الرصيد المتاح",
+    "failedToLoadSummary": "فشل في تحميل ملخص المدفوعات"
+  },
+  "modal": {
+    "paymentDetails": "تفاصيل الدفع",
+    "paymentInformation": "معلومات الدفع",
+    "close": "إغلاق"
+  },
+  "messages": {
+    "noPayments": "لم يتم العثور على مدفوعات",
+    "paymentProcessed": "تمت معالجة الدفع بنجاح",
+    "paymentFailed": "فشلت معالجة الدفع"
+  }
+}

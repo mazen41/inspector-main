@@ -1,0 +1,358 @@
+/**
+ * Responsive design enhancements for inspection form fields
+ * Mobile-first approach with progressive enhancement
+ */
+
+/* Base mobile styles (default) */
+.field-component {
+    @reference w-full;
+}
+
+/* Form section responsive layout */
+.inspection-form-section {
+    @reference space-y-4;
+}
+
+.inspection-form-section .field-wrapper {
+    @reference w-full;
+}
+
+/* Field grid layouts for larger screens */
+@media (min-width: 640px) {
+    .field-grid-2 {
+        @reference grid grid-cols-2 gap-4;
+    }
+
+    .field-grid-3 {
+        @reference grid grid-cols-3 gap-4;
+    }
+
+    .field-wrapper.field-half {
+        @reference w-1/2;
+    }
+
+    .field-wrapper.field-third {
+        @reference w-1/3;
+    }
+}
+
+/* Tablet optimizations */
+@media (min-width: 768px) {
+    .inspection-form-section {
+        @reference space-y-6;
+    }
+
+    /* Better spacing for form elements */
+    .field-component {
+        @reference space-y-3;
+    }
+
+    /* Improved button layouts */
+    .boolean-field-buttons {
+        @reference flex-nowrap;
+    }
+
+    /* Multi-select layouts */
+    .checkbox-field-grid {
+        @reference grid-cols-2;
+    }
+
+    .radio-field-grid {
+        @reference grid-cols-2;
+    }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1024px) {
+    .inspection-form-section {
+        @reference space-y-8;
+    }
+
+    /* Three-column layouts for options */
+    .checkbox-field-grid {
+        @reference grid-cols-3;
+    }
+
+    .radio-field-grid {
+        @reference grid-cols-3;
+    }
+
+    /* Wider form sections */
+    .field-wrapper.field-quarter {
+        @reference w-1/4;
+    }
+}
+
+/* Touch-friendly enhancements for mobile */
+@media (max-width: 767px) {
+
+    /* Larger touch targets */
+    .field-component input,
+    .field-component textarea,
+    .field-component select,
+    .field-component button {
+        @reference min-h-[44px];
+       
+    }
+
+    /* Larger checkboxes and radios */
+    .field-component input[type="checkbox"],
+    .field-component input[type="radio"] {
+        @reference h-5 w-5;
+    }
+
+    /* Stack boolean buttons vertically on mobile */
+    .boolean-field-buttons {
+        @reference flex-col space-y-2;
+    }
+
+    .boolean-field-buttons button {
+        @reference w-full justify-center;
+    }
+
+    /* Full-width select dropdowns */
+    .select-dropdown {
+        @reference left-0 right-0 mx-4;
+        max-width: calc(100vw - 2rem);
+        width: calc(100vw - 2rem);
+    }
+
+    /* Improved spacing for mobile */
+    .field-component {
+        @reference space-y-2;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* Larger text for better readability */
+    .field-component label {
+        @reference text-base;
+    }
+
+    .field-component input,
+    .field-component textarea {
+        @reference text-base;
+    }
+
+    /* Stack multi-select options vertically */
+    .checkbox-field-grid,
+    .radio-field-grid {
+        @reference grid-cols-1 space-y-2;
+    }
+
+    /* Improved error message display */
+    .field-error {
+        @reference text-base;
+    }
+
+
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+
+    .field-component input,
+    .field-component textarea,
+    .field-component select {
+        @reference border-2 border-black;
+    }
+
+    .field-component input:focus,
+    .field-component textarea:focus,
+    .field-component select:focus {
+        @reference ring-4 ring-black;
+    }
+
+    .field-error {
+        @reference bg-red-100 border-2 border-red-800;
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .field-component * {
+        @reference transition-none;
+    }
+
+    .field-animation {
+        @reference animate-none;
+    }
+}
+
+/* Dark mode support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+    .field-component {
+        @reference text-gray-100;
+    }
+
+    .field-component input,
+    .field-component textarea,
+    .field-component select {
+        @reference bg-gray-800 border-gray-600 text-gray-100;
+    }
+
+    .field-component input:focus,
+    .field-component textarea:focus,
+    .field-component select:focus {
+        @reference bg-gray-700 border-blue-400;
+    }
+}
+
+/* Print styles */
+@media print {
+    .field-component {
+        @reference break-inside-avoid;
+    }
+
+    .field-component input,
+    .field-component textarea,
+    .field-component select {
+        @reference border border-gray-400 bg-transparent;
+    }
+
+    .field-error {
+        @reference bg-transparent border border-red-600;
+    }
+
+    /* Hide interactive elements in print */
+    .field-component button,
+    .select-dropdown {
+        @reference hidden;
+    }
+}
+
+/* Focus management for keyboard navigation */
+.field-component:focus-within {
+    @reference ring-2 ring-blue-500 ring-opacity-20 rounded-lg;
+}
+
+/* Skip to content functionality */
+.skip-link {
+    @reference absolute -top-10 left-4 bg-blue-600 text-white px-4 py-2 rounded;
+    @reference focus:top-4 z-50 transition-all;
+}
+
+/* Screen reader only content */
+.sr-only {
+    @reference absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+}
+
+/* Focus visible for better keyboard navigation */
+.focus-visible {
+    @reference focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500;
+}
+
+/* Loading states */
+.field-loading {
+    @reference opacity-50 pointer-events-none;
+}
+
+.field-loading::after {
+    content: '';
+    @reference absolute inset-0 bg-gray-100 bg-opacity-50 rounded-lg;
+    background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Improved spacing for form sections */
+.form-section-header {
+    @reference mb-4 pb-2 border-b border-gray-200;
+}
+
+.form-section-content {
+    @reference space-y-4;
+}
+
+/* Better visual hierarchy */
+.field-label-required::after {
+    content: ' *';
+    @reference text-red-500;
+}
+
+.field-help-text {
+    @reference text-sm text-gray-600 mt-1;
+}
+
+.field-error-text {
+    @reference text-sm text-red-600 mt-1 flex items-center gap-1;
+}
+
+/* Improved button groups */
+.button-group {
+    @reference flex gap-2;
+}
+
+.button-group.vertical {
+    @reference flex-col;
+}
+
+.button-group.horizontal {
+    @reference flex-row flex-wrap;
+}
+
+/* Enhanced select dropdown */
+.select-option {
+    @reference px-3 py-2 hover:bg-gray-50 cursor-pointer;
+}
+
+.select-option.selected {
+    @reference bg-blue-50 text-blue-900;
+}
+
+.select-option.focused {
+    @reference bg-blue-100;
+}
+
+/* Multi-select enhancements */
+.multi-select-summary {
+    @reference mt-2 p-2 bg-gray-50 rounded text-sm;
+}
+
+.multi-select-tag {
+    @reference inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full;
+}
+
+/* Form validation summary */
+.validation-summary {
+    @reference p-4 bg-red-50 border border-red-200 rounded-lg;
+}
+
+.validation-summary-title {
+    @reference text-sm font-medium text-red-800 mb-2;
+}
+
+.validation-summary-list {
+    @reference text-sm text-red-700 space-y-1;
+}
+
+/* Success states */
+.field-success input,
+.field-success textarea,
+.field-success select {
+    @reference border-green-300 bg-green-50;
+}
+
+.field-success-icon {
+    @reference text-green-500;
+}
+
+/* Warning states */
+.field-warning input,
+.field-warning textarea,
+.field-warning select {
+    @reference border-yellow-300 bg-yellow-50;
+}
+
+.field-warning-icon {
+    @reference text-yellow-500;
+}

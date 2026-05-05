@@ -1,0 +1,265 @@
+  /* Mobile-specific optimizations for Manual Save Button */
+
+/* RTL (Right-to-Left) language support */
+.manual-save-button.rtl {
+  direction: rtl;
+}
+
+/* RTL positioning adjustments */
+.manual-save-button.rtl.desktop {
+  left: 1.5rem;
+  right: auto;
+}
+
+.manual-save-button.rtl.tablet {
+  left: max(2rem, env(safe-area-inset-left));
+  right: auto;
+}
+
+.manual-save-button.rtl.mobile.landscape {
+  left: max(1rem, env(safe-area-inset-left));
+  right: auto;
+}
+
+/* RTL icon and text spacing */
+.manual-save-button.rtl .mr-2 {
+  margin-right: 0.5rem;
+  margin-left: 0;
+}
+
+/* Touch interaction improvements */
+@media (pointer: coarse) {
+  .manual-save-button {
+    /* Larger touch targets for coarse pointers (fingers) */
+    min-width: 160px;
+    min-height: 52px;
+    padding: 1rem 1.5rem;
+  }
+  
+  /* Enhanced visual feedback for touch */
+  .manual-save-button:active {
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(0.98);
+  }
+}
+
+/* Fine pointer optimizations (mouse, stylus) */
+@media (pointer: fine) {
+  .manual-save-button {
+    min-width: 120px;
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+  }
+  
+  .manual-save-button:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Hover capability detection */
+@media (hover: none) {
+  /* No hover capability - likely touch device */
+  .manual-save-button:hover {
+    transform: none;
+    box-shadow: 0 8px 20px -2px rgba(0, 0, 0, 0.15), 
+                0 4px 8px -2px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Enhanced active state for touch feedback */
+  .manual-save-button:active {
+    transform: scale(0.96);
+    transition: transform 0.1s ease-in-out;
+  }
+}
+
+/* Device-specific optimizations */
+
+/* iPhone specific */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 767px) {
+    .manual-save-button {
+      /* Optimize for iPhone thumb reach */
+      bottom: max(1rem, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    .manual-save-button.keyboard-visible {
+      /* Move up when iOS keyboard is visible */
+      bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1rem));
+    }
+    
+    /* iPhone landscape */
+    @media (orientation: landscape) {
+      .manual-save-button {
+        bottom: max(0.75rem, env(safe-area-inset-bottom));
+        right: max(1rem, env(safe-area-inset-right));
+        left: auto;
+        transform: none;
+      }
+      
+      /* RTL landscape positioning for iPhone */
+      .manual-save-button.rtl {
+        left: max(1rem, env(safe-area-inset-left));
+        right: auto;
+      }
+    }
+  }
+}
+
+/* Android specific optimizations */
+@media (max-width: 767px) {
+  /* Android navigation bar handling */
+  .manual-save-button {
+    margin-bottom: env(keyboard-inset-height, 0px);
+  }
+  
+  /* Android keyboard detection */
+  @media (max-height: 500px) {
+    .manual-save-button {
+      bottom: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      min-height: 44px;
+    }
+  }
+}
+
+/* Foldable device support */
+@media (spanning: single-fold-vertical) {
+  .manual-save-button {
+    /* Adjust for vertical fold */
+    right: 2rem;
+  }
+}
+
+@media (spanning: single-fold-horizontal) {
+  .manual-save-button {
+    /* Adjust for horizontal fold */
+    bottom: 2rem;
+  }
+}
+
+/* High refresh rate display optimizations */
+@media (update: fast) {
+  .manual-save-button {
+    /* Smoother animations for high refresh rate displays */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .manual-save-button:active {
+    transition: transform 0.05s ease-in-out;
+  }
+}
+
+/* Battery saving mode considerations */
+@media (prefers-reduced-motion: reduce) {
+  .manual-save-button {
+    /* Minimal animations to save battery */
+    transition: background-color 0.2s ease-in-out;
+  }
+  
+  .manual-save-button:hover,
+  .manual-save-button:active {
+    transform: none;
+  }
+  
+  .manual-save-button.slide-in,
+  .manual-save-button.has-changes {
+    animation: none;
+  }
+}
+
+/* Network-aware optimizations */
+@media (prefers-reduced-data: reduce) {
+  .manual-save-button {
+    /* Reduce visual effects for data saving */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .manual-save-button:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Accessibility enhancements for mobile */
+
+/* Large text support */
+@media (prefers-reduced-motion: no-preference) {
+  .manual-save-button {
+    font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+  }
+}
+
+/* Focus improvements for mobile screen readers */
+.manual-save-button:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 3px;
+  z-index: 60; /* Ensure focus outline is visible above other elements */
+}
+
+/* Voice control optimizations */
+@media (speech: none) {
+  .manual-save-button::before {
+    content: attr(aria-label);
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+}
+
+/* Gesture navigation support */
+@media (max-width: 767px) {
+  /* Account for gesture navigation areas */
+  .manual-save-button {
+    margin-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+  
+  /* Swipe gesture considerations */
+  .manual-save-button {
+    touch-action: manipulation; /* Prevent double-tap zoom */
+    user-select: none; /* Prevent text selection on long press */
+  }
+}
+
+/* Performance optimizations for mobile */
+.manual-save-button {
+  /* Hardware acceleration for smooth animations */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Cleanup after animations */
+.manual-save-button:not(.slide-in):not(.has-changes):not(.saving) {
+  will-change: auto;
+}
+
+/* Dark mode mobile optimizations */
+@media (prefers-color-scheme: dark) {
+  @media (max-width: 767px) {
+    .manual-save-button {
+      /* Enhanced contrast for mobile dark mode */
+      box-shadow: 0 8px 20px -2px rgba(0, 0, 0, 0.3), 
+                  0 4px 8px -2px rgba(0, 0, 0, 0.2);
+    }
+    
+    .manual-save-button.enabled {
+      background-color: #2563eb;
+      border: 1px solid #3b82f6;
+    }
+    
+    .manual-save-button.has-changes {
+      box-shadow: 0 8px 20px -2px rgba(37, 99, 235, 0.5), 
+                  0 4px 8px -2px rgba(37, 99, 235, 0.4);
+    }
+  }
+}
+
+/* Print styles - hide on mobile print */
+@media print {
+  .manual-save-button {
+    display: none !important;
+  }
+}

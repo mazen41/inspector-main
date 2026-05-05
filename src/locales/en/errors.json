@@ -1,0 +1,25 @@
+{
+  "network": {
+    "connectionFailed": "Connection failed. Please check your internet connection.",
+    "timeout": "Request timed out. Please try again.",
+    "serverError": "Server error. Please try again later.",
+    "notFound": "The requested resource was not found.",
+    "unauthorized": "You are not authorized to access this resource.",
+    "forbidden": "Access to this resource is forbidden."
+  },
+  "validation": {
+    "invalidInput": "Invalid input provided",
+    "missingData": "Required data is missing",
+    "formatError": "Data format is incorrect"
+  },
+  "general": {
+    "unknownError": "An unknown error occurred",
+    "tryAgain": "Please try again",
+    "contactSupport": "If the problem persists, please contact support"
+  },
+  "auth": {
+    "loginFailed": "Login failed. Please check your credentials.",
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "accessDenied": "Access denied. You don't have permission to perform this action."
+  }
+}

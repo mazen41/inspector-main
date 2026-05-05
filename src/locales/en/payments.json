@@ -1,0 +1,68 @@
+{
+  "title": "Payments",
+  "list": {
+    "noPayments": "No payments found",
+    "tryAdjustingFilters": "Try adjusting your filters",
+    "noRecordsYet": "You have no payment records yet",
+    "failedToLoad": "Failed to load payments"
+  },
+  "status": {
+    "pending": "Pending",
+    "completed": "Completed",
+    "paid": "Paid",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded"
+  },
+  "types": {
+    "earning": "Earnings",
+    "payment": "Payments",
+    "adjustment": "Adjustments"
+  },
+  "filters": {
+    "type": "Type",
+    "allTypes": "All Types",
+    "status": "Status",
+    "allStatuses": "All Statuses",
+    "fromDate": "From Date",
+    "toDate": "To Date",
+    "clearFilters": "Clear Filters"
+  },
+  "fields": {
+    "paymentId": "Payment ID",
+    "amount": "Amount",
+    "date": "Date",
+    "created": "Created",
+    "method": "Method",
+    "paymentMethod": "Payment Method",
+    "status": "Status",
+    "type": "Type",
+    "description": "Description",
+    "notes": "Notes",
+    "inspectionId": "Inspection ID",
+    "transactionReference": "Transaction Reference"
+  },
+  "summary": {
+    "totalEarnings": "Total Earnings",
+    "pendingPayments": "Pending Payments",
+    "thisMonthEarnings": "This Month Earnings",
+    "currentBalance": "Current Balance",
+    "paidThisMonth": "Paid This Month",
+    "averagePayment": "Average Payment",
+    "awaitingPayout": "Awaiting payout",
+    "allTimeEarnings": "All time earnings",
+    "currentMonthEarnings": "Current month earnings",
+    "availableBalance": "Available balance",
+    "failedToLoadSummary": "Failed to load payment summary"
+  },
+  "modal": {
+    "paymentDetails": "Payment Details",
+    "paymentInformation": "Payment Information",
+    "close": "Close"
+  },
+  "messages": {
+    "noPayments": "No payments found",
+    "paymentProcessed": "Payment processed successfully",
+    "paymentFailed": "Payment processing failed"
+  }
+}

@@ -1,0 +1,338 @@
+/**
+ * Mobile-specific styles for photo upload components
+ * Optimized for touch interactions and mobile devices
+ */
+
+/* Photo upload components mobile optimizations */
+.field-photo-upload {
+  /* Ensure proper touch targets */
+  touch-action: manipulation;
+}
+
+/* Mobile-specific photo grid */
+@media (max-width: 767px) {
+  .photo-preview-grid .grid {
+    gap: 0.75rem; /* 12px */
+  }
+
+  /* Larger touch targets for mobile */
+  .photo-preview-grid button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Improved photo thumbnails for mobile */
+  .photo-preview-grid .aspect-square {
+    border-radius: 0.5rem; /* 8px */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  /* Touch feedback */
+  .photo-preview-grid .aspect-square:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease-in-out;
+  }
+
+  /* Mobile photo modal optimizations */
+  .photo-modal-mobile {
+    /* Prevent scrolling on body when modal is open */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+
+  /* Swipe indicators */
+  .photo-modal-swipe-hint {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    opacity: 0;
+    animation: fadeInOut 3s ease-in-out;
+  }
+
+  @keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    20%, 80% { opacity: 1; }
+  }
+
+  /* Upload area mobile optimizations */
+  .field-photo-upload .upload-area {
+    min-height: 120px;
+    padding: 1.5rem;
+  }
+
+  /* Drag and drop disabled on mobile */
+  .field-photo-upload .upload-area[data-mobile="true"] {
+    cursor: default;
+    border-style: solid;
+  }
+
+  /* Mobile upload buttons */
+  .photo-upload-mobile-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .photo-upload-mobile-buttons button {
+    width: 100%;
+    min-height: 52px;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  /* Camera button specific styling */
+  .camera-button-mobile {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+  }
+
+  .camera-button-mobile:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px -1px rgba(16, 185, 129, 0.2);
+  }
+
+  /* Browse button specific styling */
+  .browse-button-mobile {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+  }
+
+  .browse-button-mobile:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px -1px rgba(59, 130, 246, 0.2);
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .photo-preview-grid .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  /* Tablet photo modal */
+  .photo-modal-tablet {
+    padding: 2rem;
+  }
+
+  /* Tablet upload area */
+  .field-photo-upload .upload-area {
+    min-height: 140px;
+    padding: 2rem;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .photo-preview-grid img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .photo-modal-mobile .photo-modal-content {
+    flex-direction: row;
+  }
+
+  .photo-modal-mobile .photo-thumbnails {
+    flex-direction: column;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .field-photo-upload .upload-area {
+    min-height: 100px;
+    padding: 1rem;
+  }
+
+  .photo-upload-mobile-buttons {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .photo-upload-mobile-buttons button {
+    min-height: 44px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Dark mode support for mobile */
+@media (prefers-color-scheme: dark) and (max-width: 767px) {
+  .field-photo-upload .upload-area {
+    background-color: rgba(31, 41, 55, 0.8);
+    border-color: rgba(75, 85, 99, 0.6);
+  }
+
+  .photo-preview-grid .aspect-square {
+    background-color: rgba(31, 41, 55, 0.8);
+  }
+
+  .photo-modal-mobile {
+    background-color: rgba(0, 0, 0, 0.95);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .photo-preview-grid .aspect-square,
+  .photo-upload-mobile-buttons button {
+    transition: none;
+  }
+
+  .photo-preview-grid .aspect-square:active,
+  .photo-upload-mobile-buttons button:active {
+    transform: none;
+  }
+
+  .photo-modal-swipe-hint {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Focus styles for accessibility */
+.field-photo-upload button:focus-visible,
+.photo-preview-grid button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Loading states for mobile */
+.photo-upload-loading-mobile {
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-upload-loading-mobile::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Error states for mobile */
+.photo-upload-error-mobile {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+}
+
+.photo-upload-error-mobile button {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+/* Success states for mobile */
+.photo-upload-success-mobile {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #059669;
+}
+
+/* Photo count badge for mobile */
+.photo-count-badge-mobile {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Haptic feedback simulation */
+@media (max-width: 767px) {
+  .haptic-feedback:active {
+    animation: hapticPulse 0.1s ease-in-out;
+  }
+
+  @keyframes hapticPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.98); }
+    100% { transform: scale(1); }
+  }
+}
+
+/* Safe area insets for devices with notches */
+@supports (padding: max(0px)) {
+  @media (max-width: 767px) {
+    .photo-modal-mobile {
+      padding-top: max(1rem, env(safe-area-inset-top));
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+    }
+  }
+}
+
+/* Performance optimizations */
+.photo-preview-grid img,
+.photo-modal-mobile img {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Prevent text selection on touch */
+.field-photo-upload,
+.photo-preview-grid,
+.photo-modal-mobile {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection for captions and labels */
+.field-photo-upload label,
+.field-photo-upload .photo-caption,
+.photo-modal-mobile .photo-info {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}

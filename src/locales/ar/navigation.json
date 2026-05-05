@@ -1,0 +1,36 @@
+{
+  "dashboard": "لوحة التحكم",
+  "inspections": "الفحوصات",
+  "payments": "المدفوعات",
+  "profile": "الملف الشخصي",
+  "dashboardDescription": "نظرة عامة وتحليلات",
+  "inspectionsDescription": "إدارة فحوصات السيارات",
+  "paymentsDescription": "تاريخ المدفوعات والأرباح",
+  "profileDescription": "إعدادات الحساب والتفضيلات",
+  "menu": {
+    "dashboard": "لوحة التحكم",
+    "inspections": "الفحوصات",
+    "payments": "المدفوعات",
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج"
+  },
+  "breadcrumbs": {
+    "home": "الرئيسية",
+    "dashboard": "لوحة التحكم",
+    "inspections": "الفحوصات",
+    "inspectionDetail": "تفاصيل الفحص",
+    "newInspection": "فحص جديد",
+    "editInspection": "تعديل الفحص",
+    "payments": "المدفوعات",
+    "paymentDetail": "تفاصيل الدفع",
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات"
+  },
+  "tabs": {
+    "overview": "نظرة عامة",
+    "details": "التفاصيل",
+    "history": "التاريخ",
+    "settings": "الإعدادات"
+  }
+}

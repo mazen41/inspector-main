@@ -1,0 +1,30 @@
+{
+  "dashboard": "Dashboard",
+  "inspections": "Inspections",
+  "payments": "Payments",
+  "profile": "Profile",
+  "dashboardDescription": "Overview and analytics",
+  "inspectionsDescription": "Manage car inspections",
+  "paymentsDescription": "Payment history and earnings",
+  "profileDescription": "Account settings and preferences",
+  "menu": {
+    "dashboard": "Dashboard",
+    "inspections": "Inspections",
+    "payments": "Payments",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "inspections": "Inspections",
+    "inspectionDetail": "Inspection Details",
+    "newInspection": "New Inspection",
+    "editInspection": "Edit Inspection",
+    "payments": "Payments",
+    "paymentDetail": "Payment Details",
+    "profile": "Profile",
+    "settings": "Settings"
+  }
+}
