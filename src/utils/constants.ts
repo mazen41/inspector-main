@@ -21,6 +21,11 @@ export const API_ENDPOINTS = {
     BATCH_UPLOAD_PHOTOS: (id: number) => `/inspections/${id}/upload-photos/batch`,
     DELETE_PHOTO: (inspectionId: number, photoId: number) => `/inspections/${inspectionId}/photos/${photoId}`,
   },
+  MANUAL_EXAMINATIONS: {
+    LIST: '/manual-examinations',
+    DETAIL: (id: number) => `/manual-examinations/${id}`,
+    CREATE: '/manual-examinations',
+  },
   PAYMENTS: {
     LIST: '/payments',
     DETAIL: (id: number) => `/payments/${id}`,
@@ -158,6 +163,9 @@ export const ROUTES = {
   INSPECTIONS: '/inspections',
   INSPECTION_DETAIL: '/inspections/:id',
   INSPECTION_EDIT: '/inspections/:id/edit',
+  MANUAL_EXAMINATIONS: '/manual-examinations',
+  MANUAL_EXAMINATION_CREATE: '/manual-examinations/create',
+  MANUAL_EXAMINATION_DETAIL: '/manual-examinations/:id',
   PAYMENTS: '/payments',
   PROFILE: '/profile',
 } as const;

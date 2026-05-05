@@ -1,10 +1,12 @@
 {
   "dashboard": "Dashboard",
   "inspections": "Inspections",
+  "manualExaminations": "Manual Examinations",
   "payments": "Payments",
   "profile": "Profile",
   "dashboardDescription": "Overview and analytics",
   "inspectionsDescription": "Manage car inspections",
+  "manualExaminationsDescription": "Create manual car examinations",
   "paymentsDescription": "Payment history and earnings",
   "profileDescription": "Account settings and preferences",
   "menu": {

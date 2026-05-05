@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   ClipboardList, 
+  ClipboardCheck,
   CreditCard, 
   User
 } from 'lucide-react';
@@ -29,6 +30,12 @@ const getNavigation = (t: (key: string) => string): NavigationItem[] => [
     href: ROUTES.INSPECTIONS, 
     icon: ClipboardList,
     description: t('navigation.inspectionsDescription')
+  },
+  {
+    name: t('navigation.manualExaminations'),
+    href: ROUTES.MANUAL_EXAMINATIONS,
+    icon: ClipboardCheck,
+    description: t('navigation.manualExaminationsDescription')
   },
   { 
     name: t('navigation.payments'), 

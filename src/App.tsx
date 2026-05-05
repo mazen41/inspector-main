@@ -15,6 +15,9 @@ import {
   InspectionsPage,
   InspectionDetailPage,
   InspectionFormPage,
+  ManualExaminationsPage,
+  ManualExaminationCreatePage,
+  ManualExaminationDetailPage,
   PaymentsPage,
   ProfilePage,
 } from './pages';
@@ -111,6 +114,39 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <InspectionFormPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path={ROUTES.MANUAL_EXAMINATIONS}
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ManualExaminationsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path={ROUTES.MANUAL_EXAMINATION_CREATE}
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ManualExaminationCreatePage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path={ROUTES.MANUAL_EXAMINATION_DETAIL}
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ManualExaminationDetailPage />
             </Layout>
           </ProtectedRoute>
         }

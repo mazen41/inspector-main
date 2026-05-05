@@ -1,10 +1,12 @@
 {
   "dashboard": "لوحة التحكم",
   "inspections": "الفحوصات",
+  "manualExaminations": "الفحوصات اليدوية",
   "payments": "المدفوعات",
   "profile": "الملف الشخصي",
   "dashboardDescription": "نظرة عامة وتحليلات",
   "inspectionsDescription": "إدارة فحوصات السيارات",
+  "manualExaminationsDescription": "إنشاء فحوصات سيارات يدوية",
   "paymentsDescription": "تاريخ المدفوعات والأرباح",
   "profileDescription": "إعدادات الحساب والتفضيلات",
   "menu": {
