@@ -20,7 +20,7 @@ const baseQuery = fetchBaseQuery({
     }
 
     headers.set('accept', 'application/json');
-    //headers.set('content-type', 'application/json');
+    headers.set('content-type', 'application/json');
     headers.set('System-Key', import.meta.env.VITE_BACKEND_SYSTEM_KEY)
     return headers;
   },
