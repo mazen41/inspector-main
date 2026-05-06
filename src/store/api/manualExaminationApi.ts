@@ -67,11 +67,19 @@ export const manualExaminationApi = apiSlice.injectEndpoints({
       keepUnusedDataFor: 300,
     }),
     getCarInspectionTypes: builder.query<InspectionTypeLookup[], void>({
-      query: () => carsApiUrl('/inspection-types'),
-      transformResponse: (response: { car_inspection_types?: InspectionTypeLookup[] }) =>
-        response.car_inspection_types || [],
-      keepUnusedDataFor: 300,
-    }),
+  query: () => carsApiUrl('/inspection-types'),
+  transformResponse: (response: {
+    success?: boolean;
+    data?: {
+      car_inspection_types?: InspectionTypeLookup[];
+    };
+    car_inspection_types?: InspectionTypeLookup[];
+  }) => {
+    return response.data?.car_inspection_types || response.car_inspection_types || [];
+  },
+  keepUnusedDataFor: 300,
+}),
+
     getManualCountries: builder.query<{ data: Country[] }, void>({
       query: () => '/countries',
       keepUnusedDataFor: 300,

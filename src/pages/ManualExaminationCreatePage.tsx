@@ -161,32 +161,34 @@ const ManualExaminationCreatePage: React.FC = () => {
   const selectedInspectionType = availableInspectionTypes.find((type) => String(type.id) === inspectionTypeId);
 
   const templates: FieldTemplate[] = useMemo(() => {
-    if (!selectedInspectionType) return [];
+  if (!selectedInspectionType?.sections) return [];
 
-    if ('sections' in selectedInspectionType && selectedInspectionType.sections) {
-      return selectedInspectionType.sections.flatMap((section: any) =>
-        (section.fields || []).map((field: any) => {
-          let parsedOptions: string[] = [];
-          if (Array.isArray(field.options)) {
-            parsedOptions = field.options as string[];
-          } else if (field.options && typeof field.options === 'object' && Array.isArray(field.options.options)) {
-            parsedOptions = field.options.options;
-          }
+  return selectedInspectionType.sections.flatMap((section) =>
+    (section.fields || []).map((field) => {
+      let parsedOptions: string[] = [];
 
-          return {
-            id: field.id,
-            name: field.name,
-            type: field.type,
-            required: field.is_required,
-            options: parsedOptions,
-            section: section.name,
-          };
-        })
-      );
-    }
+      if (Array.isArray(field.options)) {
+        parsedOptions = field.options;
+      } else if (
+        field.options &&
+        typeof field.options === 'object' &&
+        Array.isArray(field.options.options)
+      ) {
+        parsedOptions = field.options.options;
+      }
 
-    return [];
-  }, [selectedInspectionType]);
+      return {
+        id: field.id,
+        name: field.name,
+        type: field.type,
+        required: field.is_required,
+        options: parsedOptions,
+        section: section.name,
+      };
+    })
+  );
+}, [selectedInspectionType]);
+
 
   const groupedFields = useMemo(() => {
     return templates.reduce<Record<string, FieldTemplate[]>>((groups, field) => {
