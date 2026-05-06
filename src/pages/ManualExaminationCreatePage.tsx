@@ -65,6 +65,43 @@ const initialCarForm: CarFormState = {
   state_id: '',
 };
 
+// النماذج الاحتياطية في حال كان الـ API فارغاً
+const fallbackTypes = [
+  { id: 1, name: 'نموذج البائع', slug: 'seller-form' },
+  { id: 2, name: 'فحص المشتري الأساسي', slug: 'buyer-basic-test' },
+  { id: 3, name: 'فحص المشتري المتقدم', slug: 'buyer-advanced-test' },
+];
+
+const fieldTemplatesByType: Record<string, FieldTemplate[]> = {
+  'seller-form': [
+    { id: 1, section: 'معلومات المركبة', name: 'رقم الشاصي (VIN)', type: 'text', required: true },
+    { id: 2, section: 'معلومات المركبة', name: 'قراءة العداد', type: 'number', required: true },
+    { id: 3, section: 'معلومات المركبة', name: 'عدد الملاك السابقين', type: 'select', required: true, options: ['1', '2', '3', '4', '5+'] },
+    { id: 4, section: 'معلومات المركبة', name: 'يوجد تاريخ حوادث؟', type: 'boolean', required: true },
+    { id: 6, section: 'تقييم الحالة', name: 'الحالة العامة', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف'] },
+    { id: 10, section: 'الوثائق', name: 'استمارة المركبة', type: 'boolean', required: true },
+  ],
+  'buyer-basic-test': [
+    { id: 14, section: 'الفحص الخارجي', name: 'حالة البودي والطلاء', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'يحتاج صيانة'] },
+    { id: 15, section: 'الفحص الخارجي', name: 'أضرار الهيكل', type: 'checkbox', required: true, options: ['خدوش', 'طعجات', 'صدأ', 'أضرار تصادم', 'لا يوجد'] },
+    { id: 16, section: 'الفحص الخارجي', name: 'حالة الإطارات', type: 'select', required: true, options: ['جديدة', 'جيدة', 'مقبولة', 'متآكلة', 'تحتاج تغيير'] },
+    { id: 18, section: 'الفحص الداخلي', name: 'حالة المقاعد', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'متآكل', 'تالف'] },
+    { id: 22, section: 'غرفة المحرك', name: 'سهولة تشغيل المحرك', type: 'boolean', required: true },
+    { id: 26, section: 'تجربة القيادة', name: 'أداء القير (ناقل الحركة)', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'يوجد مشكلة'] },
+  ],
+  'buyer-advanced-test': [
+    { id: 30, section: 'الفحص الخارجي', name: 'حالة البودي والطلاء', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'يحتاج صيانة'] },
+    { id: 31, section: 'الفحص الخارجي', name: 'أضرار الهيكل', type: 'checkbox', required: true, options: ['خدوش', 'طعجات', 'صدأ', 'أضرار تصادم', 'لا يوجد'] },
+    { id: 32, section: 'الفحص الخارجي', name: 'حالة الإطارات', type: 'select', required: true, options: ['جديدة', 'جيدة', 'مقبولة', 'متآكلة', 'تحتاج تغيير'] },
+    { id: 34, section: 'الفحص الداخلي', name: 'حالة المقاعد', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'متآكل', 'تالف'] },
+    { id: 38, section: 'غرفة المحرك', name: 'سهولة تشغيل المحرك', type: 'boolean', required: true },
+    { id: 40, section: 'غرفة المحرك', name: 'مستويات السوائل', type: 'checkbox', required: true, options: ['زيت المحرك سليم', 'ماء الرديتر سليم', 'زيت الفرامل سليم', 'زيت الدركسون سليم'] },
+    { id: 42, section: 'تجربة القيادة', name: 'أداء القير (ناقل الحركة)', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'يوجد مشكلة'] },
+    { id: 43, section: 'تجربة القيادة', name: 'أداء الفرامل', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'غير آمن'] },
+    { id: 50, section: 'الأنظمة الكهربائية', name: 'حالة البطارية', type: 'select', required: true, options: ['جديدة', 'جيدة', 'مقبولة', 'ضعيفة', 'تحتاج تغيير'] },
+  ],
+};
+
 const lookupName = (item: CarLookupItem) => item.name || item.label || item.value || `#${item.id}`;
 
 const ManualExaminationCreatePage: React.FC = () => {
@@ -98,38 +135,48 @@ const ManualExaminationCreatePage: React.FC = () => {
   );
   const states = statesRes?.data || [];
 
-  useEffect(() => {
-    if (inspectionTypes.length > 0 && !inspectionTypeId) {
-      setInspectionTypeId(String(inspectionTypes[0].id));
-    }
-  }, [inspectionTypes, inspectionTypeId]);
-
   const [createManualExamination, { isLoading: isSubmitting }] = useCreateManualExaminationMutation();
 
-  const availableInspectionTypes = inspectionTypes;
+  // الدمج بين الـ API والـ Fallback
+  const availableInspectionTypes = inspectionTypes.length > 0 ? inspectionTypes : fallbackTypes;
+
+  useEffect(() => {
+    if (availableInspectionTypes.length > 0 && !inspectionTypeId) {
+      setInspectionTypeId(String(availableInspectionTypes[0].id));
+    }
+  }, [availableInspectionTypes, inspectionTypeId]);
+
   const selectedInspectionType = availableInspectionTypes.find((type) => String(type.id) === inspectionTypeId);
 
   const templates: FieldTemplate[] = useMemo(() => {
-    if (!selectedInspectionType || !selectedInspectionType.sections) return [];
-    return selectedInspectionType.sections.flatMap((section: any) =>
-      (section.fields || []).map((field: any) => {
-        let parsedOptions: string[] = [];
-        if (Array.isArray(field.options)) {
-          parsedOptions = field.options as string[];
-        } else if (field.options && typeof field.options === 'object' && Array.isArray(field.options.options)) {
-          parsedOptions = field.options.options;
-        }
+    if (!selectedInspectionType) return [];
 
-        return {
-          id: field.id,
-          name: field.name,
-          type: field.type,
-          required: field.is_required,
-          options: parsedOptions,
-          section: section.name,
-        };
-      })
-    );
+    // إذا كانت البيانات قادمة من الـ API وتحتوي على sections
+    if ('sections' in selectedInspectionType && selectedInspectionType.sections) {
+      return selectedInspectionType.sections.flatMap((section: any) =>
+        (section.fields || []).map((field: any) => {
+          let parsedOptions: string[] = [];
+          if (Array.isArray(field.options)) {
+            parsedOptions = field.options as string[];
+          } else if (field.options && typeof field.options === 'object' && Array.isArray(field.options.options)) {
+            parsedOptions = field.options.options;
+          }
+
+          return {
+            id: field.id,
+            name: field.name,
+            type: field.type,
+            required: field.is_required,
+            options: parsedOptions,
+            section: section.name,
+          };
+        })
+      );
+    }
+
+    // في حال عدم وجود sections (يعني نستخدم الـ Fallback)
+    const slug = (selectedInspectionType as any).slug;
+    return fieldTemplatesByType[slug] || [];
   }, [selectedInspectionType]);
 
   const groupedFields = useMemo(() => {
@@ -144,7 +191,8 @@ const ManualExaminationCreatePage: React.FC = () => {
     setCarForm((current) => ({
       ...current,
       [field]: value,
-      ...(field === 'brand_id' ? { model_id: '' } : {}), // إعادة تعيين الموديل عند تغيير الماركة
+      ...(field === 'brand_id' ? { model_id: '' } : {}),
+      ...(field === 'country_id' ? { state_id: '' } : {}),
     }));
   };
 
@@ -223,7 +271,7 @@ const ManualExaminationCreatePage: React.FC = () => {
       country_id: Number(carForm.country_id),
       state_id: Number(carForm.state_id),
       city_id: undefined,
-      main_photo: 0,
+      main_photo: 0 as any,
       photos: undefined,
       features: [],
       custom_fields: [],
