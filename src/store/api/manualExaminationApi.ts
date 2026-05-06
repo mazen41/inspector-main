@@ -51,6 +51,11 @@ export const manualExaminationApi = apiSlice.injectEndpoints({
       transformResponse: (response: { categories: CarLookupItem[] }) => response.categories || [],
       keepUnusedDataFor: 300,
     }),
+    getCarColors: builder.query<CarLookupItem[], void>({
+      query: () => carsApiUrl('/colors'),
+      transformResponse: (response: { colors: CarLookupItem[] }) => response.colors || [],
+      keepUnusedDataFor: 300,
+    }),
     getCarFeatures: builder.query<CarLookupItem[], void>({
       query: () => carsApiUrl('/features'),
       transformResponse: (response: { features: CarLookupItem[] }) => response.features || [],
@@ -89,6 +94,7 @@ export const {
   useGetCarBrandsQuery,
   useGetCarModelsByBrandQuery,
   useGetCarCategoriesQuery,
+  useGetCarColorsQuery,
   useGetCarFeaturesQuery,
   useGetCarCustomFieldsQuery,
   useGetCarInspectionTypesQuery,

@@ -143,6 +143,7 @@ export interface CarLookupItem {
   id: number;
   name: string;
   brand_id?: number;
+  hex_code?: string;
   logo?: string;
   value?: string;
   label?: string;

@@ -6,6 +6,7 @@ import {
   useCreateManualExaminationMutation,
   useGetCarBrandsQuery,
   useGetCarCategoriesQuery,
+  useGetCarColorsQuery,
   useGetCarInspectionTypesQuery,
   useGetCarModelsByBrandQuery,
   useGetManualCountriesQuery,
@@ -104,6 +105,9 @@ const fieldTemplatesByType: Record<string, FieldTemplate[]> = {
 
 const lookupName = (item: CarLookupItem) => item.name || item.label || item.value || `#${item.id}`;
 
+void fallbackTypes;
+void fieldTemplatesByType;
+
 const ManualExaminationCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
@@ -125,6 +129,7 @@ const ManualExaminationCreatePage: React.FC = () => {
     carForm.brand_id ? Number(carForm.brand_id) : skipToken
   );
   const { data: categories = [] } = useGetCarCategoriesQuery();
+  const { data: colors = [] } = useGetCarColorsQuery();
   const { data: inspectionTypes = [] } = useGetCarInspectionTypesQuery();
 
   const { data: countriesRes } = useGetManualCountriesQuery();
@@ -137,13 +142,21 @@ const ManualExaminationCreatePage: React.FC = () => {
 
   const [createManualExamination, { isLoading: isSubmitting }] = useCreateManualExaminationMutation();
 
-  const availableInspectionTypes = inspectionTypes.length > 0 ? inspectionTypes : fallbackTypes;
+  const availableInspectionTypes = inspectionTypes;
 
   useEffect(() => {
     if (availableInspectionTypes.length > 0 && !inspectionTypeId) {
       setInspectionTypeId(String(availableInspectionTypes[0].id));
     }
   }, [availableInspectionTypes, inspectionTypeId]);
+
+  useEffect(() => {
+    setFieldValues({});
+    setFieldNotes({});
+    setFieldScores({});
+    setFlagged({});
+    setFlagReasons({});
+  }, [inspectionTypeId]);
 
   const selectedInspectionType = availableInspectionTypes.find((type) => String(type.id) === inspectionTypeId);
 
@@ -172,8 +185,7 @@ const ManualExaminationCreatePage: React.FC = () => {
       );
     }
 
-    const slug = (selectedInspectionType as any).slug;
-    return fieldTemplatesByType[slug] || [];
+    return [];
   }, [selectedInspectionType]);
 
   const groupedFields = useMemo(() => {
@@ -232,8 +244,19 @@ const ManualExaminationCreatePage: React.FC = () => {
       setFormError('الرجاء اختيار نوع الفحص.');
       return false;
     }
-    // Simplified: Removed the strict check that forces you to fill out the fake fallback fields
-    // so you don't get stuck here.
+    if (templates.length === 0) {
+      setFormError('No inspection fields are available for this inspection type.');
+      return false;
+    }
+    const missing = templates.filter((field) => field.required && (
+      fieldValues[String(field.id)] === undefined ||
+      fieldValues[String(field.id)] === '' ||
+      (Array.isArray(fieldValues[String(field.id)]) && (fieldValues[String(field.id)] as unknown[]).length === 0)
+    ));
+    if (missing.length > 0) {
+      setFormError(`Please complete required inspection fields: ${missing.map((field) => field.name).slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`);
+      return false;
+    }
     setFormError('');
     return true;
   };
@@ -267,11 +290,19 @@ const ManualExaminationCreatePage: React.FC = () => {
       custom_fields: [],
     };
 
+    const values: ManualExaminationFieldValuePayload[] = templates.map((field) => ({
+      field_id: field.id,
+      value: fieldValues[String(field.id)] ?? null,
+      score: fieldScores[field.id] ? Number(fieldScores[field.id]) : undefined,
+      notes: fieldNotes[field.id] || undefined,
+      is_flagged: flagged[field.id] || false,
+      flag_reason: flagged[field.id] ? flagReasons[field.id] || undefined : undefined,
+    }));
+
     return {
       car,
       inspection_type_id: Number(inspectionTypeId),
-      // FIX: Pass empty array to bypass the backend validation crashing on fake IDs
-      field_values: [],
+      field_values: values,
       total_score: totalScore ? Number(totalScore) : undefined,
       overall_condition: overallCondition as ManualExaminationCreatePayload['overall_condition'],
       inspector_notes: inspectorNotes || undefined,
@@ -457,9 +488,9 @@ const ManualExaminationCreatePage: React.FC = () => {
                 {renderTextInput('رقم الشاصي (VIN)', carForm.vin, (value) => updateCarField('vin', value), 'text', true)}
                 {renderSelect('حالة السيارة', carForm.condition, (value) => updateCarField('condition', value), [{ id: 'new', name: 'جديد' }, { id: 'used', name: 'مستعمل' }], true)}
                 {renderSelect('الماركة', carForm.brand_id, (value) => updateCarField('brand_id', value), brands.map((item) => ({ id: item.id, name: lookupName(item) })), true)}
-                {renderSelect('الموديل', carForm.model_id, (value) => updateCarField('model_id', value), models.map((item) => ({ id: item.id, name: lookupName(item) })))}
+                {renderSelect('الموديل', carForm.model_id, (value) => updateCarField('model_id', value), models.map((item) => ({ id: item.id, name: lookupName(item) })), true)}
                 {renderSelect('الفئة', carForm.category_id, (value) => updateCarField('category_id', value), categories.map((item) => ({ id: item.id, name: lookupName(item) })))}
-                {renderTextInput('اللون', carForm.color_id, (value) => updateCarField('color_id', value), 'text', true)}
+                {renderSelect('اللون', carForm.color_id, (value) => updateCarField('color_id', value), colors.map((item) => ({ id: item.id, name: lookupName(item) })), true)}
                 {renderTextInput('سنة الصنع', carForm.manufacture_year, (value) => updateCarField('manufacture_year', value), 'number', true)}
                 {renderTextInput('المسافة المقطوعة', carForm.milage, (value) => updateCarField('milage', value), 'number', true)}
                 {renderTextInput('السعر', carForm.price, (value) => updateCarField('price', value), 'number')}
