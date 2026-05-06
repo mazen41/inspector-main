@@ -156,5 +156,18 @@ export interface InspectionTypeLookup {
   name: string;
   description?: string;
   price?: number;
-  sections?: Array<{ name: string }>;
+  sections?: Array<{
+    id: number;
+    name: string;
+    description?: string;
+    order?: number;
+    fields: Array<{
+      id: number;
+      name: string;
+      type: FieldType;
+      is_required: boolean;
+      options?: { options?: string[] } | string[] | null;
+      order?: number;
+    }>;
+  }>;
 }
