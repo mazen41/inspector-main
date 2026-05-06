@@ -9,9 +9,13 @@ class ApiClient {
     this.client = axios.create({
       baseURL: `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector`,
       timeout: 30000,
+      // withCredentials: false — JWT Bearer auth, no cookies sent cross-origin.
+      // Mirrors the `credentials: 'omit'` setting in RTK Query's fetchBaseQuery.
+      withCredentials: false,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
       },
     });
 

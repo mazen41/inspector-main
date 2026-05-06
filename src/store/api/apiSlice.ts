@@ -2,26 +2,45 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../index';
 import type { ApiError } from '../../types';
 
+/**
+ * JWT Bearer token authentication — no cookies, no CSRF.
+ *
+ * This API uses a custom JWT flow (JwtService on the backend). Every request
+ * is authenticated via the `Authorization: Bearer <token>` header.
+ *
+ * What this means:
+ *  - `credentials: 'omit'`  → browser never sends cookies cross-origin, so
+ *    Laravel's Sanctum stateful middleware can never trigger a CSRF check.
+ *  - No X-XSRF-TOKEN header is needed or sent.
+ *  - No /sanctum/csrf-cookie pre-flight is needed.
+ */
 const baseQuery = fetchBaseQuery({
   baseUrl: `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector`,
+  // Explicitly omit cookies so the browser never sends session/CSRF cookies
+  // cross-origin. This is the correct setting for a Bearer-token-only API.
+  credentials: 'omit',
   prepareHeaders: (headers, { getState }) => {
     const state = getState() as RootState;
 
-    // Add authentication token
+    // JWT Bearer token — the only authentication mechanism used
     const token = state.auth.token;
     if (token) {
-      headers.set('authorization', `Bearer ${token}`);
+      headers.set('Authorization', `Bearer ${token}`);
     }
 
-    // Add language header
+    // Locale header for server-side language selection
     const currentLanguage = state.localization?.currentLanguage;
     if (currentLanguage) {
       headers.set('App-Language', currentLanguage.code);
     }
 
-    headers.set('accept', 'application/json');
-    headers.set('content-type', 'application/json');
-    headers.set('System-Key', import.meta.env.VITE_BACKEND_SYSTEM_KEY)
+    headers.set('Accept', 'application/json');
+    headers.set('Content-Type', 'application/json');
+    headers.set('System-Key', import.meta.env.VITE_BACKEND_SYSTEM_KEY);
+
+    // Note: X-XSRF-TOKEN is intentionally NOT set.
+    // JWT Bearer auth does not require CSRF tokens.
+
     return headers;
   },
 });
@@ -30,7 +49,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
   const result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
-    // Token expired, logout user
+    // JWT expired or invalid — force logout
     api.dispatch({ type: 'auth/logout' });
   }
 
