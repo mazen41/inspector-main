@@ -11,8 +11,7 @@ import type {
   State,
 } from '../../types';
 
-const carsApiUrl = (path: string) =>
-  `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/cars${path}`;
+const carsApiUrl = (path: string) => `/api/v2/cars${path}`;
 
 export const manualExaminationApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
