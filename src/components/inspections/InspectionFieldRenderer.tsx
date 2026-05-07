@@ -39,6 +39,7 @@ interface InspectionFieldRendererProps extends Omit<FieldRendererProps, 'field'>
   showHelp?: boolean;
   showRequired?: boolean;
   enablePhotoUpload?: boolean;
+  forceArabicPhotoUpload?: boolean;
   className?: string;
 }
 
@@ -61,6 +62,7 @@ const InspectionFieldRenderer: React.FC<InspectionFieldRendererProps> = React.me
   showHelp = true,
   showRequired = true,
   enablePhotoUpload = false,
+  forceArabicPhotoUpload = false,
   className = '',
 }) => {
   const fieldType = getFieldType(field);
@@ -250,6 +252,7 @@ const InspectionFieldRenderer: React.FC<InspectionFieldRendererProps> = React.me
           onPhotoClick={onPhotoClick}
           onPhotoDelete={onPhotoDelete}
           disabled={disabled}
+          forceArabic={forceArabicPhotoUpload}
           className="field-photo-upload-wrapper"
         />
         {photoError && (

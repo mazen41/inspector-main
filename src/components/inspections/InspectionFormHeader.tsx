@@ -12,6 +12,7 @@ interface InspectionFormHeaderProps {
   onBack: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
+  forceArabic?: boolean;
 }
 
 const InspectionFormHeader: React.FC<InspectionFormHeaderProps> = ({
@@ -21,6 +22,7 @@ const InspectionFormHeader: React.FC<InspectionFormHeaderProps> = ({
   onBack,
   onSubmit,
   isSubmitting,
+  forceArabic = false,
 }) => {
   const { t } = useTranslation();
   const getSubmitButtonContent = () => {
@@ -29,32 +31,32 @@ const InspectionFormHeader: React.FC<InspectionFormHeaderProps> = ({
         return (
           <>
             <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-            <span className="hidden sm:inline">Validating...</span>
-            <span className="sm:hidden text-xs">Validating</span>
+            <span className="hidden sm:inline">{forceArabic ? 'جار التحقق...' : 'Validating...'}</span>
+            <span className="sm:hidden text-xs">{forceArabic ? 'تحقق' : 'Validating'}</span>
           </>
         );
       case 'submitting':
         return (
           <>
             <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-            <span className="hidden sm:inline">Submitting...</span>
-            <span className="sm:hidden text-xs">Submitting</span>
+            <span className="hidden sm:inline">{forceArabic ? 'جار الإرسال...' : 'Submitting...'}</span>
+            <span className="sm:hidden text-xs">{forceArabic ? 'إرسال' : 'Submitting'}</span>
           </>
         );
       case 'success':
         return (
           <>
             <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Submitted!</span>
-            <span className="sm:hidden text-xs">Done!</span>
+            <span className="hidden sm:inline">{forceArabic ? 'تم الإرسال' : 'Submitted!'}</span>
+            <span className="sm:hidden text-xs">{forceArabic ? 'تم' : 'Done!'}</span>
           </>
         );
       default:
         return (
           <>
             <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">{t('inspections.actions.submitInspection')}</span>
-            <span className="sm:hidden text-xs">{t('inspections.actions.submit')}</span>
+            <span className="hidden sm:inline">{forceArabic ? 'إرسال الفحص' : t('inspections.actions.submitInspection')}</span>
+            <span className="sm:hidden text-xs">{forceArabic ? 'إرسال' : t('inspections.actions.submit')}</span>
           </>
         );
     }
@@ -76,12 +78,12 @@ const InspectionFormHeader: React.FC<InspectionFormHeaderProps> = ({
             className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition-colors p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 flex-shrink-0 mt-0.5"
           >
             <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="hidden sm:inline text-sm">{t('inspections.actions.back')}</span>
+            <span className="hidden sm:inline text-sm">{forceArabic ? 'رجوع' : t('inspections.actions.back')}</span>
           </button>
 
           <div className="min-w-0 flex-1">
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate leading-tight">
-              {t('inspections.actions.editInspection')}
+              {forceArabic ? 'إنشاء فحص يدوي' : t('inspections.actions.editInspection')}
             </h1>
             <p className="text-gray-600 mt-0.5 sm:mt-1 text-xs sm:text-sm md:text-base truncate">
               {inspection.inspection_number || `Inspection #${inspection.id}`} - {inspection.car?.name}
@@ -91,10 +93,12 @@ const InspectionFormHeader: React.FC<InspectionFormHeaderProps> = ({
 
         {/* Action buttons row */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3">
-          <SaveStatusIndicator 
-            status={saveStatus}
-            className="flex-shrink-0"
-          />
+          {!forceArabic && (
+            <SaveStatusIndicator
+              status={saveStatus}
+              className="flex-shrink-0"
+            />
+          )}
           
           {inspection.actions.can_complete && (
             <button

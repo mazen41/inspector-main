@@ -19,7 +19,7 @@ const baseQuery = fetchBaseQuery({
   // Explicitly omit cookies so the browser never sends session/CSRF cookies
   // cross-origin. This is the correct setting for a Bearer-token-only API.
   credentials: 'omit',
-  prepareHeaders: (headers, { getState }) => {
+  prepareHeaders: (headers, { getState, endpoint }) => {
     const state = getState() as RootState;
 
     // JWT Bearer token — the only authentication mechanism used
@@ -35,7 +35,11 @@ const baseQuery = fetchBaseQuery({
     }
 
     headers.set('Accept', 'application/json');
-    headers.set('Content-Type', 'application/json');
+    if (endpoint === 'uploadInspectionPhoto' || endpoint === 'batchUploadInspectionPhotos') {
+      headers.delete('Content-Type');
+    } else {
+      headers.set('Content-Type', 'application/json');
+    }
     headers.set('System-Key', import.meta.env.VITE_BACKEND_SYSTEM_KEY);
 
     // Note: X-XSRF-TOKEN is intentionally NOT set.

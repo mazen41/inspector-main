@@ -4,9 +4,10 @@ import FieldPhotoPreview from './FieldPhotoPreview';
 import type { InspectionPhoto } from '../../types/inspection';
 import { Camera, AlertCircle, CheckCircle, Upload, Plus } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { createImagePreview } from '../../utils/photoValidation';
 
 interface FieldPhotoUploadProps {
-  inspectionId: number;
+  inspectionId?: number;
   fieldId: number;
   photos: InspectionPhoto[];
   onPhotosChange: (photos: InspectionPhoto[]) => void;
@@ -18,6 +19,7 @@ interface FieldPhotoUploadProps {
   enableCompression?: boolean;
   showDetailedProgress?: boolean;
   readOnly?: boolean;
+  forceArabic?: boolean;
 }
 
 const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
@@ -33,6 +35,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
   enableCompression = true,
   showDetailedProgress = false,
   readOnly = false,
+  forceArabic = false,
 }) => {
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const [uploadMessages, setUploadMessages] = useState<string[]>([]);
@@ -41,6 +44,9 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
+  const tr = useCallback((key: string, arabic: string, params?: Record<string, any>) => (
+    forceArabic ? arabic : t(key, params)
+  ), [forceArabic, t]);
 
   const {
     uploadSinglePhoto,
@@ -92,12 +98,30 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
 
     // Check if adding these files would exceed max photos
     if (photos.length + validFiles.length > maxPhotos) {
-      const error = t('inspections.photos.cannotUploadFiles', {
+      const error = tr('inspections.photos.cannotUploadFiles', `لا يمكن رفع ${validFiles.length} صورة. الحد الأقصى ${maxPhotos} صور لكل حقل، ولديك حاليا ${photos.length}.`, {
         count: validFiles.length,
         maxPhotos,
         currentCount: photos.length
       });
       setUploadErrors([error]);
+      clearMessages();
+      return;
+    }
+
+    if (!inspectionId) {
+      const localPhotos = validFiles.map((file) => ({
+        id: -Date.now() - Math.floor(Math.random() * 100000),
+        field_id: fieldId,
+        url: createImagePreview(file),
+        thumbnail_url: createImagePreview(file),
+        caption: file.name,
+        uploaded_at: new Date().toISOString(),
+        file,
+        isPending: true,
+      })) as Array<InspectionPhoto & { file: File; isPending: boolean }>;
+
+      onPhotosChange([...(photos || []), ...localPhotos]);
+      setUploadMessages(validFiles.map((file) => tr('inspections.photos.successfullyUploaded', `تم تجهيز ${file.name} للرفع.`, { fileName: file.name })));
       clearMessages();
       return;
     }
@@ -118,15 +142,15 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
               }
             },
             onSuccess: () => {
-              setUploadMessages(prev => [...prev, t('inspections.photos.successfullyUploaded', { fileName: file.name })]);
+              setUploadMessages(prev => [...prev, tr('inspections.photos.successfullyUploaded', `تم رفع ${file.name} بنجاح.`, { fileName: file.name })]);
               clearMessages();
             },
             onError: (error) => {
-              setUploadErrors(prev => [...prev, t('inspections.photos.failedToUpload', { fileName: file.name, error })]);
+              setUploadErrors(prev => [...prev, tr('inspections.photos.failedToUpload', `تعذر رفع ${file.name}: ${error}`, { fileName: file.name, error })]);
               clearMessages();
             },
             onValidationError: (error) => {
-              setUploadErrors(prev => [...prev, t('inspections.photos.validationError', { fileName: file.name, error })]);
+              setUploadErrors(prev => [...prev, tr('inspections.photos.validationError', `خطأ في ملف ${file.name}: ${error}`, { fileName: file.name, error })]);
               clearMessages();
             }
           }
@@ -251,7 +275,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Camera className="h-4 w-4" />
-            <span>{t('inspections.photos.addPhotos')}</span>
+            <span>{tr('inspections.photos.addPhotos', 'إضافة صور')}</span>
           </div>
           
           <div className="flex gap-2">
@@ -266,7 +290,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
               `}
             >
               <Upload className="h-4 w-4" />
-              {isUploading ? t('inspections.fields.uploading') : t('inspections.photos.browse')}
+              {isUploading ? tr('inspections.fields.uploading', 'جار الرفع') : tr('inspections.photos.browse', 'اختيار صور')}
             </button>
 
             {/* Camera button - only show on mobile or devices with camera */}
@@ -282,7 +306,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
                 `}
               >
                 <Camera className="h-4 w-4" />
-                {t('inspections.photos.camera')}
+                {tr('inspections.photos.camera', 'الكاميرا')}
               </button>
             )}
           </div>
@@ -303,7 +327,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
               onDrop={handleDrop}
               onClick={handleBrowseClick}
             >
-              {isDragOver ? t('inspections.photos.dropPhotosHere') : t('inspections.photos.dragAndDrop')}
+              {isDragOver ? tr('inspections.photos.dropPhotosHere', 'أفلت الصور هنا') : tr('inspections.photos.dragAndDrop', 'اسحب الصور وأفلتها هنا')}
             </div>
           )}
         </div>
@@ -312,9 +336,9 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="text-xs text-gray-600">
-              {t('inspections.photos.photosOf', { count: photos.length, max: maxPhotos })}
+              {tr('inspections.photos.photosOf', `${photos.length} من ${maxPhotos} صور`, { count: photos.length, max: maxPhotos })}
               {enableCompression && (
-                <span className="ml-1 text-xs text-gray-500">({t('inspections.photos.optimized')})</span>
+                <span className="ml-1 text-xs text-gray-500">({tr('inspections.photos.optimized', 'محسنة')})</span>
               )}
             </div>
 
@@ -332,7 +356,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
                   title="Add more photos"
                 >
                   <Plus className="h-3 w-3" />
-                  { t('inspections.photos.add') }
+                  { tr('inspections.photos.add', 'إضافة') }
                 </button>
 
                 {(isMobile || 'mediaDevices' in navigator) && (
@@ -348,7 +372,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
                     title="Take photo"
                   >
                     <Camera className="h-3 w-3" />
-                    {isMobile ? t('inspections.photos.camera') : '📷'}
+                    {isMobile ? tr('inspections.photos.camera', 'الكاميرا') : '📷'}
                   </button>
                 )}
               </div>
@@ -371,7 +395,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
               onDrop={handleDrop}
               onClick={handleBrowseClick}
             >
-              {isDragOver ? t('inspections.photos.dropAdditionalPhotos') : t('inspections.photos.dragMorePhotos')}
+              {isDragOver ? tr('inspections.photos.dropAdditionalPhotos', 'أفلت الصور الإضافية هنا') : tr('inspections.photos.dragMorePhotos', 'اسحب صورا إضافية هنا')}
             </div>
           )}
         </div>
@@ -380,7 +404,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
       {/* Max photos reached message */}
       {photos.length >= maxPhotos && !disabled && (
         <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700 text-center">
-          {t('inspections.photos.maxPhotosReached', { maxPhotos })}
+          {tr('inspections.photos.maxPhotosReached', `وصلت إلى الحد الأقصى: ${maxPhotos} صور.`, { maxPhotos })}
         </div>
       )}
 
@@ -388,7 +412,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
       {isUploading && (
         <div className="mt-2 space-y-1">
           <div className="flex items-center justify-between text-xs text-gray-600">
-            <span>{t('inspections.photos.uploadingFiles', { 
+            <span>{tr('inspections.photos.uploadingFiles', `جار رفع ${overallProgress.activeUploads} ملف`, { 
               count: overallProgress.activeUploads,
               plural: overallProgress.activeUploads !== 1 ? 's' : ''
             })}...</span>
@@ -430,7 +454,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
       {/* Detailed Progress (if enabled) */}
       {showDetailedProgress && Object.keys(uploadStates).length > 0 && (
         <div className="mt-2 p-2 bg-gray-50 rounded space-y-1 text-xs text-gray-500">
-          <div className="font-medium">{t('inspections.photos.uploadDetails')}</div>
+          <div className="font-medium">{tr('inspections.photos.uploadDetails', 'تفاصيل الرفع')}</div>
           {Object.entries(uploadStates).map(([fileId, state]) => (
             <div key={fileId} className="flex justify-between">
               <span>{state.stage}</span>
@@ -448,6 +472,7 @@ const FieldPhotoUpload: React.FC<FieldPhotoUploadProps> = ({
           onPhotoDelete={onPhotoDelete || (() => { })}
           readOnly={readOnly || disabled}
           maxPreviewPhotos={4}
+          forceArabic={forceArabic}
         />
       )}
     </div>

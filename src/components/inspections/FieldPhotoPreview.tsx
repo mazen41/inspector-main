@@ -8,6 +8,7 @@ interface FieldPhotoPreviewProps {
     onPhotoDelete: (photoId: number) => void;
     readOnly?: boolean;
     maxPreviewPhotos?: number;
+    forceArabic?: boolean;
 }
 
 const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
@@ -16,6 +17,7 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
     onPhotoDelete,
     readOnly = false,
     maxPreviewPhotos = 8,
+    forceArabic = false,
 }) => {
     const [isMobile, setIsMobile] = useState(false);
     const [touchedPhoto, setTouchedPhoto] = useState<number | null>(null);
@@ -38,17 +40,17 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
     }
 
     const formatUploadDate = (dateString?: string) => {
-        if (!dateString) return 'Unknown date';
+        if (!dateString) return forceArabic ? 'تاريخ غير معروف' : 'Unknown date';
         try {
             const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
+            return date.toLocaleDateString(forceArabic ? 'ar-EG' : 'en-US', {
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
             });
         } catch {
-            return 'Unknown date';
+            return forceArabic ? 'تاريخ غير معروف' : 'Unknown date';
         }
     };
 
@@ -66,11 +68,11 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
         <div className="field-photo-preview mt-3">
             <div className="flex items-center justify-between mb-2">
                 <div className="text-sm font-medium text-gray-700">
-                    {photos.length} photo{photos.length !== 1 ? 's' : ''}
+                    {forceArabic ? `${photos.length} صور` : `${photos.length} photo${photos.length !== 1 ? 's' : ''}`}
                 </div>
                 {hasMorePhotos && (
                     <div className="text-xs text-gray-500">
-                        Showing {maxPreviewPhotos} of {photos.length}
+                        {forceArabic ? `عرض ${maxPreviewPhotos} من ${photos.length}` : `Showing ${maxPreviewPhotos} of ${photos.length}`}
                     </div>
                 )}
             </div>
@@ -94,7 +96,7 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
                             {photo?.url || photo?.thumbnail_url ? (
                                 <img
                                     src={photo.thumbnail_url || photo.url}
-                                    alt={photo.caption || `Photo ${index + 1}`}
+                                    alt={photo.caption || (forceArabic ? `صورة ${index + 1}` : `Photo ${index + 1}`)}
                                     className={`
                   w-full h-full object-cover cursor-pointer transition-transform duration-200
                   ${isMobile ? 'active:scale-95' : 'group-hover:scale-105'}
@@ -106,7 +108,7 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
                                 <div className="w-full h-full flex items-center justify-center bg-gray-200">
                                     <div className="text-gray-500 text-xs text-center">
                                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400 mx-auto mb-1"></div>
-                                        Uploading...
+                                        {forceArabic ? 'جار الرفع...' : 'Uploading...'}
                                     </div>
                                 </div>
                             )}
@@ -138,7 +140,7 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
                     transition-all active:scale-95
                     ${isMobile ? 'min-h-[40px] min-w-[40px]' : ''}
                   `}
-                                        title="View photo"
+                                        title={forceArabic ? 'عرض الصورة' : 'View photo'}
                                     >
                                         <Eye className={`text-gray-700 ${isMobile ? 'h-4 w-4' : 'h-3 w-3'}`} />
                                     </button>
@@ -151,7 +153,7 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
                                                 e.stopPropagation();
                                                 if (isMobile) {
                                                     // Show confirmation on mobile
-                                                    if (confirm('Delete this photo?')) {
+                                                    if (confirm(forceArabic ? 'هل تريد حذف هذه الصورة؟' : 'Delete this photo?')) {
                                                         onPhotoDelete(photo?.id);
                                                     }
                                                 } else {
@@ -163,7 +165,7 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
                       transition-all active:scale-95
                       ${isMobile ? 'min-h-[40px] min-w-[40px]' : ''}
                     `}
-                                            title="Delete photo"
+                                            title={forceArabic ? 'حذف الصورة' : 'Delete photo'}
                                         >
                                             <Trash2 className={`text-white ${isMobile ? 'h-4 w-4' : 'h-3 w-3'}`} />
                                         </button>
@@ -177,12 +179,12 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        if (confirm('Delete this photo?')) {
+                                        if (confirm(forceArabic ? 'هل تريد حذف هذه الصورة؟' : 'Delete this photo?')) {
                                             onPhotoDelete(photo?.id);
                                         }
                                     }}
                                     className="absolute top-1 right-1 p-1 bg-red-600 opacity-80 rounded-full active:scale-95 transition-all"
-                                    title="Delete photo"
+                                    title={forceArabic ? 'حذف الصورة' : 'Delete photo'}
                                 >
                                     <X className="h-3 w-3 text-white" />
                                 </button>
@@ -208,7 +210,7 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
                             {!photo?.url && (
                                 <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
                                     <div className="text-gray-500 text-xs">
-                                        Uploading...
+                                        {forceArabic ? 'جار الرفع...' : 'Uploading...'}
                                     </div>
                                 </div>
                             )}
@@ -217,7 +219,7 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
                             {hasMorePhotos && index === maxPreviewPhotos - 1 && (
                                 <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
                                     <div className="text-white text-sm font-medium">
-                                        +{photos.length - maxPreviewPhotos} more
+                                        {forceArabic ? `+${photos.length - maxPreviewPhotos} أخرى` : `+${photos.length - maxPreviewPhotos} more`}
                                     </div>
                                 </div>
                             )}
@@ -229,7 +231,7 @@ const FieldPhotoPreview: React.FC<FieldPhotoPreviewProps> = ({
             {/* Mobile instruction */}
             {isMobile && photos.length > 0 && (
                 <div className="text-xs text-gray-400 mt-2 text-center">
-                    Tap photos to view • Long press for options
+                    {forceArabic ? 'اضغط على الصور للعرض، واضغط مطولا للخيارات' : 'Tap photos to view - Long press for options'}
                 </div>
             )}
         </div>

@@ -7,6 +7,7 @@ interface InspectionFormProgressProps {
   sections: InspectionSection[];
   formState: InspectionFormState;
   className?: string;
+  forceArabic?: boolean;
 }
 
 interface FormProgress {
@@ -23,6 +24,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
   sections,
   formState,
   className = '',
+  forceArabic = false,
 }) => {
   const { t } = useTranslation();
   // Calculate overall form progress
@@ -117,7 +119,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
           bgColor: 'bg-green-50',
           borderColor: 'border-green-200',
           textColor: 'text-green-800',
-          statusText: t('inspections.form.status.formComplete'),
+          statusText: forceArabic ? 'النموذج مكتمل' : t('inspections.form.status.formComplete'),
           progressColor: 'bg-green-500',
         };
       case 'error':
@@ -126,7 +128,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200',
           textColor: 'text-red-800',
-          statusText: t('inspections.form.status.needsAttention'),
+          statusText: forceArabic ? 'يحتاج إلى مراجعة' : t('inspections.form.status.needsAttention'),
           progressColor: 'bg-red-500',
         };
       case 'in-progress':
@@ -135,7 +137,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
           bgColor: 'bg-amber-50',
           borderColor: 'border-amber-200',
           textColor: 'text-amber-800',
-          statusText: t('inspections.form.status.inProgress'),
+          statusText: forceArabic ? 'قيد الإكمال' : t('inspections.form.status.inProgress'),
           progressColor: 'bg-amber-500',
         };
       default:
@@ -144,7 +146,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
           bgColor: 'bg-gray-50',
           borderColor: 'border-gray-200',
           textColor: 'text-gray-600',
-          statusText: t('inspections.form.status.notStarted'),
+          statusText: forceArabic ? 'لم يبدأ بعد' : t('inspections.form.status.notStarted'),
           progressColor: 'bg-gray-300',
         };
     }
@@ -164,7 +166,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
-              {t('inspections.form.progress.title')}
+              {forceArabic ? 'تقدم الفحص' : t('inspections.form.progress.title')}
             </h2>
             <p className={`text-sm ${statusDisplay.textColor} font-medium`}>
               {statusDisplay.statusText}
@@ -193,8 +195,8 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
       {/* Progress bar */}
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600 mb-2">
-          <span className="truncate">{t('inspections.form.progress.requiredFieldsProgress')}</span>
-          <span className="text-right sm:text-left">{t('inspections.form.progress.completedOf', { 
+          <span className="truncate">{forceArabic ? 'تقدم الحقول المطلوبة' : t('inspections.form.progress.requiredFieldsProgress')}</span>
+          <span className="text-right sm:text-left">{forceArabic ? `${progress.completedRequiredFields} من ${progress.totalRequiredFields} مكتمل` : t('inspections.form.progress.completedOf', { 
             completed: progress.completedRequiredFields, 
             total: progress.totalRequiredFields 
           })}</span>
@@ -211,7 +213,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm">
         <div className="flex items-center gap-2">
           <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
-          <span className="text-gray-600 truncate">{t('inspections.form.progress.completedSections')}:</span>
+          <span className="text-gray-600 truncate">{forceArabic ? 'الأقسام المكتملة' : t('inspections.form.progress.completedSections')}:</span>
           <span className="font-semibold text-green-700">
             {progress.completedSections}/{progress.totalSections}
           </span>
@@ -220,7 +222,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
         {progress.sectionsWithErrors > 0 && (
           <div className="flex items-center gap-2">
             <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" />
-            <span className="text-gray-600 truncate">{t('inspections.form.progress.sectionsWithErrors')}:</span>
+            <span className="text-gray-600 truncate">{forceArabic ? 'أقسام بها أخطاء' : t('inspections.form.progress.sectionsWithErrors')}:</span>
             <span className="font-semibold text-red-700">
               {progress.sectionsWithErrors}
             </span>
@@ -229,7 +231,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
 
         <div className="flex items-center gap-2">
           <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-amber-500 flex-shrink-0" />
-          <span className="text-gray-600 truncate">{t('inspections.form.progress.inProgress')}:</span>
+          <span className="text-gray-600 truncate">{forceArabic ? 'قيد الإكمال' : t('inspections.form.progress.inProgress')}:</span>
           <span className="font-semibold text-amber-700">
             {progress.totalSections - progress.completedSections - (progress.sectionsWithErrors > 0 ? progress.sectionsWithErrors : 0)}
           </span>
@@ -239,7 +241,7 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
       {/* Section status indicators */}
       {sections.length > 1 && (
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-3">{t('inspections.form.progress.sectionStatus')}</h4>
+          <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-3">{forceArabic ? 'حالة الأقسام' : t('inspections.form.progress.sectionStatus')}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {sections.map(section => {
               const sectionStatus = progress.sectionStatuses[section.id];

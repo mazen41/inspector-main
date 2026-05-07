@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Eye, FilePlus2, Search, Square, CheckCircle, XCircle, Play } from 'lucide-react';
+import { Calendar, Download, Eye, FilePlus2, Search, Square, CheckCircle, XCircle, Play } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import { useGetManualExaminationsQuery } from '../store/api/manualExaminationApi';
+import type { RootState } from '../store';
 import type { ManualExaminationFilters } from '../types';
 
 const ManualExaminationsPage: React.FC = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<ManualExaminationFilters>({ page: 1, per_page: 10 });
   const [searchTerm, setSearchTerm] = useState('');
+  const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
+  const token = useSelector((state: RootState) => state.auth.token);
+  const currentLanguage = useSelector((state: RootState) => state.localization?.currentLanguage);
   const { data, isLoading, error } = useGetManualExaminationsQuery(filters);
 
   const handleSearch = (event: React.FormEvent) => {
@@ -17,6 +22,35 @@ const ManualExaminationsPage: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setFilters((current) => ({ ...current, page }));
+  };
+
+  const handleDownloadPdf = async (event: React.MouseEvent, examinationId: number, inspectionNumber: string) => {
+    event.stopPropagation();
+    setDownloadingPdfId(examinationId);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${examinationId}/download-pdf`, {
+        headers: {
+          Accept: 'application/pdf',
+          Authorization: token ? `Bearer ${token}` : '',
+          'App-Language': currentLanguage?.code || 'ar',
+          'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to download PDF');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `manual-examination-report-${inspectionNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setDownloadingPdfId(null);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -92,13 +126,15 @@ const ManualExaminationsPage: React.FC = () => {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Manual Examinations</h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">Create and review manual car examinations.</p>
         </div>
-        <button
-          onClick={() => navigate('/manual-examinations/create')}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-        >
-          <FilePlus2 className="h-4 w-4" />
-          Create New
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={() => navigate('/manual-examinations/create')}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+          >
+            <FilePlus2 className="h-4 w-4" />
+            Create New
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -150,13 +186,23 @@ const ManualExaminationsPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => navigate(`/manual-examinations/${examination.id}`)}
-                    className="flex items-center justify-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm w-full sm:w-auto"
-                  >
-                    <Eye className="h-4 w-4" />
-                    View
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                    <button
+                      onClick={(event) => handleDownloadPdf(event, examination.id, examination.inspection_number)}
+                      disabled={downloadingPdfId === examination.id}
+                      className="flex items-center justify-center gap-2 px-3 py-2 text-green-700 hover:bg-green-50 disabled:opacity-50 rounded-lg transition-colors text-sm w-full sm:w-auto"
+                    >
+                      <Download className="h-4 w-4" />
+                      {downloadingPdfId === examination.id ? 'Downloading...' : 'Download PDF'}
+                    </button>
+                    <button
+                      onClick={() => navigate(`/manual-examinations/${examination.id}`)}
+                      className="flex items-center justify-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm w-full sm:w-auto"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View
+                    </button>
+                  </div>
                 </div>
               </div>
             ))

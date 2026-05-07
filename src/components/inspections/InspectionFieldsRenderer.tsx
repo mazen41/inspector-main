@@ -30,6 +30,7 @@ interface InspectionFieldsRendererProps {
   showHelp?: boolean;
   showRequired?: boolean;
   enablePhotoUpload?: boolean;
+  forceArabicPhotoUpload?: boolean;
   className?: string;
 }
 
@@ -51,6 +52,7 @@ const InspectionFieldsRenderer: React.FC<InspectionFieldsRendererProps> = ({
   showHelp = true,
   showRequired = true,
   enablePhotoUpload = false,
+  forceArabicPhotoUpload = false,
   className = '',
 }) => {
   // Extract field values for conditional logic evaluation
@@ -150,6 +152,7 @@ const InspectionFieldsRenderer: React.FC<InspectionFieldsRendererProps> = ({
                     showHelp={showHelp}
                     showRequired={showRequired}
                     enablePhotoUpload={enablePhotoUpload}
+                    forceArabicPhotoUpload={forceArabicPhotoUpload}
                     className="h-full w-full max-w-full"
                   />
                 </div>
@@ -167,7 +170,7 @@ const InspectionFieldsRenderer: React.FC<InspectionFieldsRendererProps> = ({
   if (visibleSections.length === 0) {
     return (
       <div className="no-fields-message text-center py-8 text-gray-500">
-        <p>No fields are available for this inspection.</p>
+        <p>{forceArabicPhotoUpload ? 'لا توجد حقول متاحة لهذا الفحص.' : 'No fields are available for this inspection.'}</p>
       </div>
     );
   }

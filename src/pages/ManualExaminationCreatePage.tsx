@@ -1,7 +1,8 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowRight, CheckCircle, ChevronLeft, Save } from 'lucide-react';
 import { skipToken } from '@reduxjs/toolkit/query/react';
+import { AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import {
   useCreateManualExaminationMutation,
   useGetCarBrandsQuery,
@@ -12,14 +13,35 @@ import {
   useGetManualCountriesQuery,
   useGetManualStatesByCountryQuery,
 } from '../store/api/manualExaminationApi';
-
+import { useUploadInspectionPhotoMutation } from '../store/api/inspectionApi';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { useInspectionNavigation } from '../hooks/useInspectionNavigation';
+import {
+  InspectionCompletionModal,
+  FieldPhotoUpload,
+  InspectionFieldsRenderer,
+  InspectionFormHeader,
+  InspectionFormSummary,
+} from '../components/inspections';
+import InspectionFormProgress from '../components/inspections/InspectionFormProgress';
+import { FormErrorDisplay, UnsavedChangesModal } from '../components/common';
+import type { RootState } from '../store';
 import type {
   CarLookupItem,
-  FieldType,
+  FieldValue,
+  Inspection,
+  InspectionFormState,
+  InspectionPhoto,
+  InspectionSection,
+  Country,
   ManualExaminationCarPayload,
   ManualExaminationCreatePayload,
+  ManualExaminationDetail,
   ManualExaminationFieldValuePayload,
+  State,
 } from '../types';
+import type { InspectionCompletionData } from '../types/form';
+import { compressImageIfNeeded } from '../utils/photoValidation';
 
 type CarFormState = {
   vin: string;
@@ -32,20 +54,10 @@ type CarFormState = {
   milage: string;
   manufacture_year: string;
   fuel_type: string;
-  price: string;
   transmission: 'manual' | 'automatic' | '';
   location: string;
   country_id: string;
   state_id: string;
-};
-
-type FieldTemplate = {
-  id: number;
-  name: string;
-  type: FieldType;
-  required: boolean;
-  options?: string[];
-  section: string;
 };
 
 const initialCarForm: CarFormState = {
@@ -59,146 +71,209 @@ const initialCarForm: CarFormState = {
   milage: '',
   manufacture_year: '',
   fuel_type: 'petrol',
-  price: '',
   transmission: '',
   location: '',
   country_id: '',
   state_id: '',
 };
 
-// النماذج الاحتياطية في حال كان الـ API فارغاً
-const fallbackTypes = [
-  { id: 1, name: 'نموذج البائع', slug: 'seller-form' },
-  { id: 2, name: 'فحص المشتري الأساسي', slug: 'buyer-basic-test' },
-  { id: 3, name: 'فحص المشتري المتقدم', slug: 'buyer-advanced-test' },
-];
-
-const fieldTemplatesByType: Record<string, FieldTemplate[]> = {
-  'seller-form': [
-    { id: 1, section: 'معلومات المركبة', name: 'رقم الشاصي (VIN)', type: 'text', required: true },
-    { id: 2, section: 'معلومات المركبة', name: 'قراءة العداد', type: 'number', required: true },
-    { id: 3, section: 'معلومات المركبة', name: 'عدد الملاك السابقين', type: 'select', required: true, options: ['1', '2', '3', '4', '5+'] },
-    { id: 4, section: 'معلومات المركبة', name: 'يوجد تاريخ حوادث؟', type: 'boolean', required: true },
-    { id: 6, section: 'تقييم الحالة', name: 'الحالة العامة', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف'] },
-    { id: 10, section: 'الوثائق', name: 'استمارة المركبة', type: 'boolean', required: true },
-  ],
-  'buyer-basic-test': [
-    { id: 14, section: 'الفحص الخارجي', name: 'حالة البودي والطلاء', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'يحتاج صيانة'] },
-    { id: 15, section: 'الفحص الخارجي', name: 'أضرار الهيكل', type: 'checkbox', required: true, options: ['خدوش', 'طعجات', 'صدأ', 'أضرار تصادم', 'لا يوجد'] },
-    { id: 16, section: 'الفحص الخارجي', name: 'حالة الإطارات', type: 'select', required: true, options: ['جديدة', 'جيدة', 'مقبولة', 'متآكلة', 'تحتاج تغيير'] },
-    { id: 18, section: 'الفحص الداخلي', name: 'حالة المقاعد', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'متآكل', 'تالف'] },
-    { id: 22, section: 'غرفة المحرك', name: 'سهولة تشغيل المحرك', type: 'boolean', required: true },
-    { id: 26, section: 'تجربة القيادة', name: 'أداء القير (ناقل الحركة)', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'يوجد مشكلة'] },
-  ],
-  'buyer-advanced-test': [
-    { id: 30, section: 'الفحص الخارجي', name: 'حالة البودي والطلاء', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'يحتاج صيانة'] },
-    { id: 31, section: 'الفحص الخارجي', name: 'أضرار الهيكل', type: 'checkbox', required: true, options: ['خدوش', 'طعجات', 'صدأ', 'أضرار تصادم', 'لا يوجد'] },
-    { id: 32, section: 'الفحص الخارجي', name: 'حالة الإطارات', type: 'select', required: true, options: ['جديدة', 'جيدة', 'مقبولة', 'متآكلة', 'تحتاج تغيير'] },
-    { id: 34, section: 'الفحص الداخلي', name: 'حالة المقاعد', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'متآكل', 'تالف'] },
-    { id: 38, section: 'غرفة المحرك', name: 'سهولة تشغيل المحرك', type: 'boolean', required: true },
-    { id: 40, section: 'غرفة المحرك', name: 'مستويات السوائل', type: 'checkbox', required: true, options: ['زيت المحرك سليم', 'ماء الرديتر سليم', 'زيت الفرامل سليم', 'زيت الدركسون سليم'] },
-    { id: 42, section: 'تجربة القيادة', name: 'أداء القير (ناقل الحركة)', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'يوجد مشكلة'] },
-    { id: 43, section: 'تجربة القيادة', name: 'أداء الفرامل', type: 'select', required: true, options: ['ممتاز', 'جيد', 'مقبول', 'ضعيف', 'غير آمن'] },
-    { id: 50, section: 'الأنظمة الكهربائية', name: 'حالة البطارية', type: 'select', required: true, options: ['جديدة', 'جيدة', 'مقبولة', 'ضعيفة', 'تحتاج تغيير'] },
-  ],
+const lookupName = (item: CarLookupItem) => item.name || item.label || item.value || `#${item.id}`;
+const isEmptyValue = (value: FieldValue) => value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error) return fallback;
+  if (typeof error === 'object' && error !== null) {
+    return fallback;
+  }
+  return fallback;
 };
 
-const lookupName = (item: CarLookupItem) => item.name || item.label || item.value || `#${item.id}`;
+const arabicTextMap: Record<string, string> = {
+  'Manual Examination': 'فحص يدوي',
+  'New Manual Examination': 'فحص يدوي جديد',
+  'Car Information': 'بيانات المركبة',
+  'Inspection Type': 'نوع الفحص',
+  VIN: 'رقم الهيكل',
+  Condition: 'حالة المركبة',
+  Brand: 'الشركة المصنعة',
+  Model: 'الطراز',
+  Category: 'الفئة',
+  Color: 'اللون',
+  'Manufacture Year': 'سنة الصنع',
+  Mileage: 'الممشى',
+  'Fuel Type': 'نوع الوقود',
+  Transmission: 'ناقل الحركة',
+  Location: 'الموقع',
+  Country: 'الدولة',
+  State: 'المنطقة',
+  Description: 'وصف المركبة',
+  New: 'جديدة',
+  Used: 'مستعملة',
+  Petrol: 'بنزين',
+  Diesel: 'ديزل',
+  Electric: 'كهرباء',
+  Hybrid: 'هايبرد',
+  Automatic: 'أوتوماتيك',
+  Manual: 'يدوي',
+};
 
-void fallbackTypes;
-void fieldTemplatesByType;
+const containsArabic = (value?: string | null) => Boolean(value && /[\u0600-\u06FF]/.test(value));
+const toArabicText = (value?: string | null, fallback = 'حقل الفحص') => {
+  if (!value) return fallback;
+  if (containsArabic(value)) return value;
+  return arabicTextMap[value] || fallback;
+};
+
+type PendingInspectionPhoto = InspectionPhoto & { file?: File; isPending?: boolean };
 
 const ManualExaminationCreatePage: React.FC = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState<1 | 2>(1);
+  const token = useSelector((state: RootState) => state.auth.token);
+  const currentLanguage = useSelector((state: RootState) => state.localization?.currentLanguage);
+
   const [carForm, setCarForm] = useState<CarFormState>(initialCarForm);
   const [inspectionTypeId, setInspectionTypeId] = useState('');
-  const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({});
   const [fieldNotes, setFieldNotes] = useState<Record<number, string>>({});
-  const [fieldScores, setFieldScores] = useState<Record<number, string>>({});
-  const [flagged, setFlagged] = useState<Record<number, boolean>>({});
-  const [flagReasons, setFlagReasons] = useState<Record<number, string>>({});
-  const [totalScore, setTotalScore] = useState('');
-  const [overallCondition, setOverallCondition] = useState('');
-  const [inspectorNotes, setInspectorNotes] = useState('');
-  const [recommendations, setRecommendations] = useState('');
-  const [formError, setFormError] = useState('');
+  const [fieldPhotos, setFieldPhotos] = useState<Record<number, PendingInspectionPhoto[]>>({});
+  const [vehiclePhotos, setVehiclePhotos] = useState<PendingInspectionPhoto[]>([]);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [submissionStatus, setSubmissionStatus] = useState<{ status: 'idle' | 'validating' | 'submitting' | 'success' | 'error'; error?: string }>({ status: 'idle' });
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [createdExamination, setCreatedExamination] = useState<ManualExaminationDetail | null>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
-  const { data: brands = [] } = useGetCarBrandsQuery();
-  const { data: models = [] } = useGetCarModelsByBrandQuery(
+  const { data: brands = [], isLoading: isLoadingBrands } = useGetCarBrandsQuery();
+  const { data: models = [], isLoading: isLoadingModels } = useGetCarModelsByBrandQuery(
     carForm.brand_id ? Number(carForm.brand_id) : skipToken
   );
-  const { data: categories = [] } = useGetCarCategoriesQuery();
-  const { data: colors = [] } = useGetCarColorsQuery();
-  const { data: inspectionTypes = [] } = useGetCarInspectionTypesQuery();
-
-  const { data: countriesRes } = useGetManualCountriesQuery();
-  const countries = countriesRes?.data || [];
-
-  const { data: statesRes } = useGetManualStatesByCountryQuery(
+  const { data: categories = [], isLoading: isLoadingCategories } = useGetCarCategoriesQuery();
+  const { data: colors = [], isLoading: isLoadingColors } = useGetCarColorsQuery();
+  const { data: inspectionTypes = [], isLoading: isLoadingInspectionTypes, error: inspectionTypesError } = useGetCarInspectionTypesQuery();
+  const { data: countriesRes, isLoading: isLoadingCountries } = useGetManualCountriesQuery();
+  const { data: statesRes, isLoading: isLoadingStates } = useGetManualStatesByCountryQuery(
     carForm.country_id ? Number(carForm.country_id) : skipToken
   );
+
+  const [createManualExamination] = useCreateManualExaminationMutation();
+  const [uploadInspectionPhoto] = useUploadInspectionPhotoMutation();
+  const countries = countriesRes?.data || [];
   const states = statesRes?.data || [];
-
-  const [createManualExamination, { isLoading: isSubmitting }] = useCreateManualExaminationMutation();
-
-  const availableInspectionTypes = inspectionTypes;
+  const selectedInspectionType = inspectionTypes.find((type) => String(type.id) === inspectionTypeId);
+  const isLoading = isLoadingBrands || isLoadingModels || isLoadingCategories || isLoadingColors || isLoadingInspectionTypes || isLoadingCountries || isLoadingStates;
 
   useEffect(() => {
-    if (availableInspectionTypes.length > 0 && !inspectionTypeId) {
-      setInspectionTypeId(String(availableInspectionTypes[0].id));
+    if (inspectionTypes.length > 0 && !inspectionTypeId) {
+      setInspectionTypeId(String(inspectionTypes[0].id));
     }
-  }, [availableInspectionTypes, inspectionTypeId]);
+  }, [inspectionTypes, inspectionTypeId]);
+
+  const sections: InspectionSection[] = useMemo(() => {
+    return (selectedInspectionType?.sections || []).map((section) => ({
+      id: section.id,
+      name: toArabicText(section.name, `قسم الفحص ${section.id}`),
+      description: containsArabic(section.description) ? section.description : undefined,
+      fields: (section.fields || []).map((field) => {
+        const options = Array.isArray(field.options) ? field.options : field.options?.options || [];
+        return {
+          id: field.id,
+          name: toArabicText(field.name, `حقل الفحص ${field.id}`),
+          display_name: toArabicText(field.name, `حقل الفحص ${field.id}`),
+          description: undefined,
+          field_type: field.type,
+          type: field.type,
+          field_options: { options: options.map((option) => toArabicText(String(option), String(option))) },
+          options: options.map((option) => toArabicText(String(option), String(option))),
+          is_required: field.is_required,
+          required: field.is_required,
+          order: field.order,
+          sort_order: field.order,
+          metadata: { width: 'full' },
+          value: null,
+          photos: [],
+        };
+      }),
+    }));
+  }, [selectedInspectionType]);
+
+  const fields = useMemo(() => sections.flatMap((section) => section.fields), [sections]);
+  const initialValues = useMemo(() => fields.reduce<Record<number, FieldValue>>((values, field) => {
+    values[field.id] = null;
+    return values;
+  }, {}), [fields]);
+
+  const formValidation = useFormValidation(fields, initialValues, {
+    validateOnChange: true,
+    validateOnBlur: true,
+  });
+  const resetInspectionForm = formValidation.resetForm;
 
   useEffect(() => {
-    setFieldValues({});
+    resetInspectionForm(initialValues);
     setFieldNotes({});
-    setFieldScores({});
-    setFlagged({});
-    setFlagReasons({});
-  }, [inspectionTypeId]);
+    setFieldPhotos({});
+    setFormErrors([]);
+    setSubmissionStatus({ status: 'idle' });
+    setCreatedExamination(null);
+  }, [inspectionTypeId, initialValues, resetInspectionForm]);
 
-  const selectedInspectionType = availableInspectionTypes.find((type) => String(type.id) === inspectionTypeId);
+  const formState: InspectionFormState = useMemo(() => ({
+    fields: formValidation.fieldStates,
+    isSubmitting: formValidation.isSubmitting,
+    isDirty: formValidation.isDirty,
+    isValid: formValidation.isValid,
+  }), [formValidation.fieldStates, formValidation.isDirty, formValidation.isSubmitting, formValidation.isValid]);
 
-  const templates: FieldTemplate[] = useMemo(() => {
-  if (!selectedInspectionType?.sections) return [];
+  const carHasUnsavedChanges = Object.entries(carForm).some(([field, value]) => (
+    value !== initialCarForm[field as keyof CarFormState]
+  ));
+  const hasUnsavedChanges = formValidation.isDirty || Object.values(fieldNotes).some(Boolean) || vehiclePhotos.length > 0 || carHasUnsavedChanges;
 
-  return selectedInspectionType.sections.flatMap((section) =>
-    (section.fields || []).map((field) => {
-      let parsedOptions: string[] = [];
-
-      if (Array.isArray(field.options)) {
-        parsedOptions = field.options;
-      } else if (
-        field.options &&
-        typeof field.options === 'object' &&
-        Array.isArray(field.options.options)
-      ) {
-        parsedOptions = field.options.options;
-      }
-
-      return {
-        id: field.id,
-        name: field.name,
-        type: field.type,
-        required: field.is_required,
-        options: parsedOptions,
-        section: section.name,
-      };
-    })
-  );
-}, [selectedInspectionType]);
-
-
-  const groupedFields = useMemo(() => {
-    return templates.reduce<Record<string, FieldTemplate[]>>((groups, field) => {
-      groups[field.section] = groups[field.section] || [];
-      groups[field.section].push(field);
-      return groups;
-    }, {});
-  }, [templates]);
+  const syntheticInspection: Inspection = useMemo(() => ({
+    id: createdExamination?.id || 0,
+    inspection_number: createdExamination?.inspection_number || 'فحص يدوي جديد',
+    status: createdExamination?.status as Inspection['status'] || 'in_progress',
+    scheduled_at: null,
+    started_at: undefined,
+    completed_at: createdExamination?.completed_at || undefined,
+    cancelled_at: undefined,
+    car: {
+      id: createdExamination?.car?.id || 0,
+      name: `${brands.find((item) => String(item.id) === carForm.brand_id)?.name || 'فحص'} ${models.find((item) => String(item.id) === carForm.model_id)?.name || 'يدوي'}`,
+      brand: brands.find((item) => String(item.id) === carForm.brand_id)?.name || '',
+      model: models.find((item) => String(item.id) === carForm.model_id)?.name || '',
+      year: carForm.manufacture_year ? Number(carForm.manufacture_year) : undefined,
+      color: colors.find((item) => String(item.id) === carForm.color_id)?.name,
+      vin: carForm.vin,
+      license_plate: '',
+      fuel_type: carForm.fuel_type,
+      transmission_type: carForm.transmission,
+    },
+    sections,
+    inspection_type: {
+      id: selectedInspectionType?.id || 0,
+      name: toArabicText(selectedInspectionType?.name, 'فحص يدوي'),
+      description: selectedInspectionType?.description,
+      price: selectedInspectionType?.price || 0,
+      estimated_duration: 0,
+      sections,
+    },
+    customer: {
+      id: 0,
+      name: 'فحص يدوي',
+    },
+    actions: {
+      can_start: false,
+      can_complete: !createdExamination,
+      can_cancel: false,
+      is_editable: !createdExamination,
+    },
+    report_url: createdExamination ? `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${createdExamination.id}/download-pdf` : undefined,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }), [brands, carForm, colors, createdExamination, models, sections, selectedInspectionType]);
 
   const updateCarField = (field: keyof CarFormState, value: string) => {
+    setCreatedExamination(null);
     setCarForm((current) => ({
       ...current,
       [field]: value,
@@ -207,70 +282,35 @@ const ManualExaminationCreatePage: React.FC = () => {
     }));
   };
 
-  const requiredCarFields: Array<keyof CarFormState> = [
-    'vin',
-    'description',
-    'brand_id',
-    'model_id',
-    'color_id',
-    'condition',
-    'milage',
-    'manufacture_year',
-    'fuel_type',
-    'transmission',
-    'location',
-    'country_id',
-    'state_id',
-  ];
-
-  const validateCarStep = () => {
+  const validateCarFields = useCallback(() => {
+    const requiredCarFields: Array<keyof CarFormState> = [
+      'vin',
+      'description',
+      'brand_id',
+      'model_id',
+      'color_id',
+      'condition',
+      'milage',
+      'manufacture_year',
+      'fuel_type',
+      'transmission',
+      'location',
+      'country_id',
+      'state_id',
+    ];
     const missing = requiredCarFields.filter((field) => !carForm[field]);
-    if (missing.length > 0) {
-      setFormError('الرجاء إكمال جميع الحقول الإلزامية للسيارة قبل المتابعة.');
-      return false;
-    }
-    if (carForm.vin.length !== 17) {
-      setFormError('رقم الشاصي (VIN) يجب أن يكون 17 حرفاً ورقمياً بالضبط.');
-      return false;
-    }
-    if (carForm.description.length < 10) {
-      setFormError('وصف السيارة يجب أن يكون 10 أحرف على الأقل.');
-      return false;
-    }
-    setFormError('');
-    return true;
-  };
+    const errors: string[] = [];
 
-  const validateExaminationStep = () => {
-    if (!inspectionTypeId) {
-      setFormError('الرجاء اختيار نوع الفحص.');
-      return false;
-    }
-    if (templates.length === 0) {
-      setFormError('No inspection fields are available for this inspection type.');
-      return false;
-    }
-    const missing = templates.filter((field) => field.required && (
-      fieldValues[String(field.id)] === undefined ||
-      fieldValues[String(field.id)] === '' ||
-      (Array.isArray(fieldValues[String(field.id)]) && (fieldValues[String(field.id)] as unknown[]).length === 0)
-    ));
-    if (missing.length > 0) {
-      setFormError(`Please complete required inspection fields: ${missing.map((field) => field.name).slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`);
-      return false;
-    }
-    setFormError('');
-    return true;
-  };
+    if (missing.length > 0) errors.push('يرجى إكمال جميع بيانات المركبة المطلوبة قبل الإرسال.');
+    if (carForm.vin && carForm.vin.length !== 17) errors.push('يجب أن يتكون رقم الهيكل من 17 خانة بالضبط.');
+    if (carForm.description && carForm.description.length < 10) errors.push('يجب ألا يقل وصف المركبة عن 10 أحرف.');
 
-  const continueToExamination = () => {
-    if (validateCarStep()) setStep(2);
-  };
+    return errors;
+  }, [carForm]);
 
-  const buildPayload = (): ManualExaminationCreatePayload => {
+  const buildPayload = useCallback((completionData: InspectionCompletionData): ManualExaminationCreatePayload => {
     const car: ManualExaminationCarPayload = {
       vin: carForm.vin,
-      plate_number: undefined,
       description: carForm.description,
       brand_id: Number(carForm.brand_id),
       model_id: Number(carForm.model_id),
@@ -282,63 +322,226 @@ const ManualExaminationCreatePage: React.FC = () => {
       transmission: carForm.transmission,
       fuel_type: carForm.fuel_type,
       location: carForm.location,
-      price: carForm.price ? Number(carForm.price) : undefined,
       country_id: Number(carForm.country_id),
       state_id: Number(carForm.state_id),
       city_id: undefined,
-      main_photo: 0 as any,
+      main_photo: 0,
       photos: undefined,
       features: [],
       custom_fields: [],
     };
 
-    const values: ManualExaminationFieldValuePayload[] = templates.map((field) => ({
+    const values: ManualExaminationFieldValuePayload[] = fields.map((field) => ({
       field_id: field.id,
-      value: fieldValues[String(field.id)] ?? null,
-      score: fieldScores[field.id] ? Number(fieldScores[field.id]) : undefined,
+      value: formValidation.getFieldValue(field.id) ?? null,
       notes: fieldNotes[field.id] || undefined,
-      is_flagged: flagged[field.id] || false,
-      flag_reason: flagged[field.id] ? flagReasons[field.id] || undefined : undefined,
+      is_flagged: false,
     }));
 
     return {
       car,
       inspection_type_id: Number(inspectionTypeId),
       field_values: values,
-      total_score: totalScore ? Number(totalScore) : undefined,
-      overall_condition: overallCondition as ManualExaminationCreatePayload['overall_condition'],
-      inspector_notes: inspectorNotes || undefined,
-      recommendations: recommendations || undefined,
+      total_score: completionData.total_score,
+      overall_condition: completionData.overall_condition,
+      inspector_notes: completionData.inspector_notes,
+      recommendations: completionData.recommendations,
     };
-  };
+  }, [carForm, fieldNotes, fields, formValidation, inspectionTypeId]);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!validateCarStep() || !validateExaminationStep()) return;
+  const handleFormSubmit = useCallback(async () => {
+    if (createdExamination) return;
 
+    setSubmissionStatus({ status: 'validating' });
+    setFormErrors([]);
+
+    const carErrors = validateCarFields();
+    const hasInspectionType = Boolean(inspectionTypeId);
+    const hasFields = fields.length > 0;
+    const formIsValid = await formValidation.validateForm();
+    const missingRequired = fields.filter((field) => field.is_required && isEmptyValue(formValidation.getFieldValue(field.id)));
+    const errors = [
+      ...carErrors,
+      ...(!hasInspectionType ? ['يرجى اختيار نوع الفحص.'] : []),
+      ...(!hasFields ? ['لا توجد حقول فحص متاحة لهذا النوع.'] : []),
+      ...(!formIsValid || missingRequired.length > 0 ? ['يرجى تصحيح أخطاء التحقق قبل الإرسال.'] : []),
+    ];
+
+    if (errors.length > 0) {
+      setFormErrors(errors);
+      setSubmissionStatus({ status: 'error', error: 'يرجى تصحيح أخطاء التحقق قبل الإرسال.' });
+      return;
+    }
+
+    setSubmissionStatus({ status: 'idle' });
+    setShowCompletionModal(true);
+  }, [createdExamination, fields, formValidation, inspectionTypeId, validateCarFields]);
+
+  const uploadPendingPhotos = useCallback(async (inspectionId: number) => {
+    const pendingUploads = Object.entries(fieldPhotos).flatMap(([fieldId, photos]) =>
+      photos
+        .filter((photo): photo is PendingInspectionPhoto & { file: File } => Boolean(photo.file))
+        .map((photo) => ({ fieldId: Number(fieldId), file: photo.file }))
+    );
+
+    for (const upload of pendingUploads) {
+      const processedFile = await compressImageIfNeeded(upload.file, 2);
+      await uploadInspectionPhoto({
+        id: inspectionId,
+        file: processedFile,
+        fieldId: upload.fieldId,
+      }).unwrap();
+    }
+  }, [fieldPhotos, uploadInspectionPhoto]);
+
+  const uploadVehiclePhotos = useCallback(async (inspectionId: number) => {
+    const files = vehiclePhotos
+      .filter((photo): photo is PendingInspectionPhoto & { file: File } => Boolean(photo.file))
+      .map((photo) => photo.file);
+
+    if (files.length === 0) return;
+
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append('photos[]', await compressImageIfNeeded(file, 2));
+    }
+
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${inspectionId}/vehicle-photos`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+        'App-Language': currentLanguage?.code || 'ar',
+        'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('تعذر رفع صور المركبة.');
+    }
+  }, [currentLanguage?.code, token, vehiclePhotos]);
+
+  const handleCompletionSubmit = useCallback(async (completionData: InspectionCompletionData) => {
     try {
-      await createManualExamination(buildPayload()).unwrap();
-      navigate('/manual-examinations');
-    } catch (error: any) {
-      setFormError(error?.data?.error?.message || 'فشل في إنشاء الفحص اليدوي.');
+      setSubmissionStatus({ status: 'submitting' });
+      const response = await createManualExamination(buildPayload(completionData)).unwrap();
+      await uploadVehiclePhotos(response.data.id);
+      await uploadPendingPhotos(response.data.id);
+      setCreatedExamination(response.data);
+      setSubmissionStatus({ status: 'success' });
+      setShowCompletionModal(false);
+      formValidation.resetForm(formValidation.getFormValues());
+
+      window.setTimeout(() => {
+        navigate(`/manual-examinations/${response.data.id}`);
+      }, 1000);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'تعذر إنشاء الفحص اليدوي. يرجى المحاولة مرة أخرى.');
+      setSubmissionStatus({ status: 'error', error: message });
+      setFormErrors([message]);
+      throw error;
+    }
+  }, [buildPayload, createManualExamination, formValidation, navigate, uploadPendingPhotos, uploadVehiclePhotos]);
+
+  const handlePhotosChange = useCallback((fieldId: number, photos: InspectionPhoto[]) => {
+    setFieldPhotos((current) => ({ ...current, [fieldId]: photos as PendingInspectionPhoto[] }));
+  }, []);
+
+  const handlePhotoDelete = useCallback((photoId: number) => {
+    setFieldPhotos((current) => Object.entries(current).reduce<Record<number, PendingInspectionPhoto[]>>((next, [fieldId, photos]) => {
+      const removed = photos.find((photo) => photo.id === photoId);
+      if (removed?.isPending && removed.url?.startsWith('blob:')) {
+        window.URL.revokeObjectURL(removed.url);
+      }
+      next[Number(fieldId)] = photos.filter((photo) => photo.id !== photoId);
+      return next;
+    }, {}));
+  }, []);
+
+  const handleVehiclePhotoDelete = useCallback((photoId: number) => {
+    setVehiclePhotos((current) => {
+      const removed = current.find((photo) => photo.id === photoId);
+      if (removed?.isPending && removed.url?.startsWith('blob:')) {
+        window.URL.revokeObjectURL(removed.url);
+      }
+      return current.filter((photo) => photo.id !== photoId);
+    });
+  }, []);
+
+  const handleDownloadPdf = async () => {
+    if (!createdExamination?.id || !syntheticInspection.report_url) return;
+
+    setIsDownloadingPdf(true);
+    try {
+      const response = await fetch(syntheticInspection.report_url, {
+        headers: {
+          Accept: 'application/pdf',
+          Authorization: token ? `Bearer ${token}` : '',
+          'App-Language': currentLanguage?.code || 'ar',
+          'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
+        },
+      });
+
+      if (!response.ok) throw new Error('تعذر تنزيل ملف التقرير.');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `inspection-report-${createdExamination.inspection_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'تعذر تنزيل ملف التقرير.');
+      setFormErrors([message]);
+      setSubmissionStatus({ status: 'error', error: message });
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
+  const navigation = useInspectionNavigation({
+    hasUnsavedChanges: hasUnsavedChanges && !createdExamination,
+    isSubmitting: submissionStatus.status === 'submitting' || submissionStatus.status === 'validating',
+  });
+
+  const renderInput = (label: string, field: keyof CarFormState, type = 'text', required = false) => (
+    <label className="block">
+      <span className="block text-sm font-medium text-gray-700 mb-2 text-right">
+        {label}{required && <span className="text-red-500 mr-1">*</span>}
+      </span>
+      <input
+        type={type}
+        value={carForm[field]}
+        onChange={(event) => updateCarField(field, event.target.value)}
+        disabled={submissionStatus.status === 'submitting' || Boolean(createdExamination)}
+        placeholder={`أدخل ${label}`}
+        dir="rtl"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 text-right"
+        required={required}
+      />
+    </label>
+  );
+
   const renderSelect = (
     label: string,
-    value: string,
-    onChange: (value: string) => void,
+    field: keyof CarFormState,
     options: Array<{ id: number | string; name: string }>,
     required = false,
   ) => (
     <label className="block">
-      <span className="block text-sm font-medium text-gray-700 mb-1">
+      <span className="block text-sm font-medium text-gray-700 mb-2 text-right">
         {label}{required && <span className="text-red-500 mr-1">*</span>}
       </span>
       <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+        value={carForm[field]}
+        onChange={(event) => updateCarField(field, event.target.value)}
+        disabled={submissionStatus.status === 'submitting' || Boolean(createdExamination)}
+        dir="rtl"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 text-right"
         required={required}
       >
         <option value="">اختر {label}</option>
@@ -349,274 +552,215 @@ const ManualExaminationCreatePage: React.FC = () => {
     </label>
   );
 
-  const renderTextInput = (
-    label: string,
-    value: string,
-    onChange: (value: string) => void,
-    type = 'text',
-    required = false,
-  ) => (
-    <label className="block">
-      <span className="block text-sm font-medium text-gray-700 mb-1">
-        {label}{required && <span className="text-red-500 mr-1">*</span>}
-      </span>
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-        required={required}
-      />
-    </label>
-  );
-
-  const renderFieldInput = (field: FieldTemplate) => {
-    const value = fieldValues[String(field.id)];
-    const setValue = (nextValue: unknown) => setFieldValues((current) => ({ ...current, [String(field.id)]: nextValue }));
-
-    if (field.type === 'textarea') {
-      return (
-        <textarea
-          value={String(value || '')}
-          onChange={(event) => setValue(event.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-          rows={3}
-        />
-      );
-    }
-
-    if (field.type === 'boolean') {
-      return (
-        <select
-          value={value === undefined ? '' : String(value)}
-          onChange={(event) => setValue(event.target.value === 'true')}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-        >
-          <option value="">اختر</option>
-          <option value="true">نعم</option>
-          <option value="false">لا</option>
-        </select>
-      );
-    }
-
-    if (field.type === 'select' || field.type === 'radio') {
-      return (
-        <select
-          value={String(value || '')}
-          onChange={(event) => setValue(event.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-        >
-          <option value="">اختر</option>
-          {(field.options || []).map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      );
-    }
-
-    if (field.type === 'checkbox') {
-      const selected = Array.isArray(value) ? value as string[] : [];
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {(field.options || []).map((option) => (
-            <label key={option} className="inline-flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={selected.includes(option)}
-                onChange={(event) => {
-                  setValue(event.target.checked
-                    ? [...selected, option]
-                    : selected.filter((item) => item !== option));
-                }}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              {option}
-            </label>
-          ))}
-        </div>
-      );
-    }
-
+  if (isLoading) {
     return (
-      <input
-        type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-        value={String(value || '')}
-        onChange={(event) => setValue(event.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-      />
-    );
-  };
-
-  return (
-    <form dir="rtl" onSubmit={handleSubmit} className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 text-right">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-        <div className="flex items-center gap-4">
-          <button type="button" onClick={() => navigate('/manual-examinations')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-            <ArrowRight className="h-4 w-4" />
-            <span className="hidden sm:inline">رجوع</span>
-          </button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">إنشاء فحص يدوي جديد</h1>
-            <p className="text-sm text-gray-600 mt-1">الخطوة {step} من 2</p>
+      <div className="p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {formError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 flex items-start gap-2 text-red-800">
-          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-          <span>{formError}</span>
-        </div>
-      )}
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="border-b border-gray-200 px-4 sm:px-6 py-4">
-          <div className="flex items-center gap-3 text-sm">
-            <span className={`inline-flex items-center justify-center h-7 w-7 rounded-full ${step === 1 ? 'bg-blue-600 text-white' : 'bg-green-100 text-green-700'}`}>
-              {step === 1 ? '1' : <CheckCircle className="h-4 w-4" />}
-            </span>
-            <span className={step === 1 ? 'font-medium text-blue-700' : 'font-medium text-gray-700'}>معلومات السيارة</span>
-            <ChevronLeft className="h-4 w-4 text-gray-400" />
-            <span className={`inline-flex items-center justify-center h-7 w-7 rounded-full ${step === 2 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>2</span>
-            <span className={step === 2 ? 'font-medium text-blue-700' : 'text-gray-500'}>تفاصيل الفحص</span>
+  if (inspectionTypesError) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <p className="text-red-800 font-medium">تعذر تحميل أنواع الفحص</p>
+          </div>
+          <p className="text-red-600 text-sm mt-1">
+            يرجى تحديث الصفحة أو التواصل مع الدعم إذا استمرت المشكلة.
+          </p>
+          <div className="mt-4">
+            <button
+              onClick={() => navigation.handleNavigation('/manual-examinations')}
+              className="px-4 py-2 text-red-600 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+            >
+              العودة إلى الفحوصات
+            </button>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {step === 1 ? (
-          <div className="p-4 sm:p-6 space-y-6">
-            <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">بيانات السيارة الأساسية</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {renderTextInput('رقم الشاصي (VIN)', carForm.vin, (value) => updateCarField('vin', value), 'text', true)}
-                {renderSelect('حالة السيارة', carForm.condition, (value) => updateCarField('condition', value), [{ id: 'new', name: 'جديد' }, { id: 'used', name: 'مستعمل' }], true)}
-                {renderSelect('الماركة', carForm.brand_id, (value) => updateCarField('brand_id', value), brands.map((item) => ({ id: item.id, name: lookupName(item) })), true)}
-                {renderSelect('الموديل', carForm.model_id, (value) => updateCarField('model_id', value), models.map((item) => ({ id: item.id, name: lookupName(item) })), true)}
-                {renderSelect('الفئة', carForm.category_id, (value) => updateCarField('category_id', value), categories.map((item) => ({ id: item.id, name: lookupName(item) })))}
-                {renderSelect('اللون', carForm.color_id, (value) => updateCarField('color_id', value), colors.map((item) => ({ id: item.id, name: lookupName(item) })), true)}
-                {renderTextInput('سنة الصنع', carForm.manufacture_year, (value) => updateCarField('manufacture_year', value), 'number', true)}
-                {renderTextInput('المسافة المقطوعة', carForm.milage, (value) => updateCarField('milage', value), 'number', true)}
-                {renderTextInput('السعر', carForm.price, (value) => updateCarField('price', value), 'number')}
-                {renderSelect('نوع الوقود', carForm.fuel_type, (value) => updateCarField('fuel_type', value), [{ id: 'petrol', name: 'بنزين' }, { id: 'diesel', name: 'ديزل' }, { id: 'electric', name: 'كهرباء' }, { id: 'hybrid', name: 'هجين (هايبرد)' }], true)}
-                {renderSelect('ناقل الحركة', carForm.transmission, (value) => updateCarField('transmission', value), [{ id: 'automatic', name: 'أوتوماتيك' }, { id: 'manual', name: 'يدوي' }], true)}
-                {renderTextInput('الموقع', carForm.location, (value) => updateCarField('location', value), 'text', true)}
-                {renderSelect('الدولة', carForm.country_id, (value) => updateCarField('country_id', value), countries.map((c: any) => ({ id: c.id, name: c.name })), true)}
-                {renderSelect('المنطقة', carForm.state_id, (value) => updateCarField('state_id', value), states.map((s: any) => ({ id: s.id, name: s.name })), true)}
-              </div>
-              <label className="block mt-4">
-                <span className="block text-sm font-medium text-gray-700 mb-1">الوصف<span className="text-red-500 mr-1">*</span></span>
-                <textarea
-                  value={carForm.description}
-                  onChange={(event) => updateCarField('description', event.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                  rows={5}
-                  required
-                />
-              </label>
-            </section>
+  return (
+    <div className="min-h-screen bg-gray-50 w-full max-w-full overflow-x-hidden" dir="rtl" lang="ar">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 w-full max-w-full">
+        <InspectionFormHeader
+          inspection={syntheticInspection}
+          saveStatus={{ status: 'idle', hasUnsavedChanges: hasUnsavedChanges && !createdExamination }}
+          submissionStatus={submissionStatus}
+          onBack={() => navigation.handleNavigation('/manual-examinations')}
+          onSubmit={handleFormSubmit}
+          isSubmitting={submissionStatus.status === 'submitting' || submissionStatus.status === 'validating'}
+          forceArabic={true}
+        />
 
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={continueToExamination}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                المتابعة
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-            </div>
+        {createdExamination && (
+          <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6 flex justify-end">
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors text-sm font-medium"
+            >
+              <Download className="h-4 w-4" />
+              {isDownloadingPdf ? 'جار التنزيل...' : 'تنزيل التقرير'}
+            </button>
           </div>
-        ) : (
-          <div className="p-4 sm:p-6 space-y-6">
-            <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">نوع الفحص</h2>
-              {renderSelect('النموذج المستخدم للفحص', inspectionTypeId, setInspectionTypeId, availableInspectionTypes.map((item) => ({ id: item.id, name: item.name })), true)}
-            </section>
+        )}
 
-            {Object.keys(groupedFields).length === 0 ? (
-              <p className="text-gray-500 text-sm">لا توجد حقول فحص متاحة لهذا النموذج.</p>
-            ) : (
-              Object.entries(groupedFields).map(([section, fields]) => (
-                <section key={section}>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">{section}</h2>
-                  <div className="space-y-4">
-                    {fields.map((field) => (
-                      <div key={field.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                          <div className="lg:col-span-5">
-                            <label className="block">
-                              <span className="block text-sm font-medium text-gray-700 mb-1">
-                                {field.name}
-                              </span>
-                              {renderFieldInput(field)}
-                            </label>
-                          </div>
-                          <div className="lg:col-span-2">
-                            {renderTextInput('التقييم', fieldScores[field.id] || '', (value) => setFieldScores((current) => ({ ...current, [field.id]: value })), 'number')}
-                          </div>
-                          <div className="lg:col-span-3">
-                            {renderTextInput('ملاحظات', fieldNotes[field.id] || '', (value) => setFieldNotes((current) => ({ ...current, [field.id]: value })))}
-                          </div>
-                          <div className="lg:col-span-2 space-y-2">
-                            <label className="inline-flex items-center gap-2 text-sm text-gray-700 mt-7">
-                              <input
-                                type="checkbox"
-                                checked={flagged[field.id] || false}
-                                onChange={(event) => setFlagged((current) => ({ ...current, [field.id]: event.target.checked }))}
-                                className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                              />
-                              تحديد كمشكلة
-                            </label>
-                            {flagged[field.id] && renderTextInput('السبب', flagReasons[field.id] || '', (value) => setFlagReasons((current) => ({ ...current, [field.id]: value })))}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ))
-            )}
+        <FormErrorDisplay
+          errors={formErrors}
+          submissionStatus={submissionStatus}
+          className="mb-4 sm:mb-6"
+        />
 
-            <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">الملخص النهائي (حالة الإشراف)</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {renderTextInput('التقييم الإجمالي', totalScore, setTotalScore, 'number')}
-                {renderSelect('الحالة العامة للسيارة', overallCondition, setOverallCondition, [
-                  { id: 'excellent', name: 'ممتاز' },
-                  { id: 'good', name: 'جيد' },
-                  { id: 'fair', name: 'مقبول' },
-                  { id: 'poor', name: 'ضعيف' },
-                  { id: 'critical', name: 'حالة حرجة' },
-                ])}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-700 mb-1">ملاحظات المشرف والفاحص</span>
-                  <textarea value={inspectorNotes} onChange={(event) => setInspectorNotes(event.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" rows={4} />
-                </label>
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-700 mb-1">التوصيات</span>
-                  <textarea value={recommendations} onChange={(event) => setRecommendations(event.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" rows={4} />
-                </label>
-              </div>
-            </section>
-
-            <div className="flex flex-col sm:flex-row justify-between gap-3">
-              <button type="button" onClick={() => setStep(1)} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
-                الرجوع لمعلومات السيارة
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm"
-              >
-                <Save className="h-4 w-4" />
-                {isSubmitting ? 'جاري الحفظ...' : 'حفظ وإنشاء الفحص اليدوي'}
-              </button>
+        {submissionStatus.status === 'success' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 sm:mb-6">
+            <div className="flex items-start gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <p className="text-green-800 font-medium text-sm sm:text-base">تم إرسال الفحص بنجاح.</p>
             </div>
           </div>
         )}
+
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 text-right">بيانات المركبة</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2 text-right">نوع الفحص<span className="text-red-500 mr-1">*</span></span>
+              <select
+                value={inspectionTypeId}
+                onChange={(event) => setInspectionTypeId(event.target.value)}
+                disabled={submissionStatus.status === 'submitting' || Boolean(createdExamination)}
+                dir="rtl"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 text-right"
+              >
+                <option value="">اختر نوع الفحص</option>
+                {inspectionTypes.map((type) => (
+                  <option key={type.id} value={type.id}>{toArabicText(type.name, 'فحص يدوي')}</option>
+                ))}
+              </select>
+            </label>
+            {renderInput('رقم الهيكل', 'vin', 'text', true)}
+            {renderSelect('حالة المركبة', 'condition', [{ id: 'new', name: 'جديدة' }, { id: 'used', name: 'مستعملة' }], true)}
+            {renderSelect('الشركة المصنعة', 'brand_id', brands.map((item) => ({ id: item.id, name: lookupName(item) })), true)}
+            {renderSelect('الطراز', 'model_id', models.map((item) => ({ id: item.id, name: lookupName(item) })), true)}
+            {renderSelect('الفئة', 'category_id', categories.map((item) => ({ id: item.id, name: lookupName(item) })))}
+            {renderSelect('اللون', 'color_id', colors.map((item) => ({ id: item.id, name: lookupName(item) })), true)}
+            {renderInput('سنة الصنع', 'manufacture_year', 'number', true)}
+            {renderInput('الممشى', 'milage', 'number', true)}
+            {renderSelect('نوع الوقود', 'fuel_type', [{ id: 'petrol', name: 'بنزين' }, { id: 'diesel', name: 'ديزل' }, { id: 'electric', name: 'كهرباء' }, { id: 'hybrid', name: 'هايبرد' }], true)}
+            {renderSelect('ناقل الحركة', 'transmission', [{ id: 'automatic', name: 'أوتوماتيك' }, { id: 'manual', name: 'يدوي' }], true)}
+            {renderInput('الموقع', 'location', 'text', true)}
+            {renderSelect('الدولة', 'country_id', countries.map((country: Country) => ({ id: country.id, name: country.name })), true)}
+            {renderSelect('المنطقة', 'state_id', states.map((state: State) => ({ id: state.id, name: state.name })), true)}
+          </div>
+          <label className="block mt-4 sm:mt-6">
+            <span className="block text-sm font-medium text-gray-700 mb-2 text-right">وصف المركبة<span className="text-red-500 mr-1">*</span></span>
+            <textarea
+              value={carForm.description}
+              onChange={(event) => updateCarField('description', event.target.value)}
+              disabled={submissionStatus.status === 'submitting' || Boolean(createdExamination)}
+              placeholder="اكتب وصفا واضحا لحالة المركبة وملاحظاتها"
+              dir="rtl"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 resize-none text-right"
+              rows={4}
+              required
+            />
+          </label>
+        </div>
+
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 text-right">صور المركبة</h2>
+          <FieldPhotoUpload
+            fieldId={0}
+            photos={vehiclePhotos}
+            onPhotosChange={(photos) => setVehiclePhotos(photos as PendingInspectionPhoto[])}
+            onPhotoDelete={handleVehiclePhotoDelete}
+            disabled={submissionStatus.status === 'submitting' || submissionStatus.status === 'validating' || Boolean(createdExamination)}
+            maxPhotos={10}
+            forceArabic={true}
+          />
+        </div>
+
+        <InspectionFormProgress
+          sections={sections}
+          formState={formState}
+          forceArabic={true}
+        />
+
+        <div className="space-y-8 w-full max-w-full overflow-x-hidden">
+          <InspectionFieldsRenderer
+            sections={sections}
+            formState={formState}
+            fieldNotes={fieldNotes}
+            fieldPhotos={fieldPhotos}
+            photoErrors={{}}
+            inspectionId={undefined}
+            onFieldChange={formValidation.setFieldValue}
+            onFieldBlur={(fieldId) => formValidation.setFieldTouched(fieldId)}
+            onNotesChange={(fieldId, notes) => setFieldNotes((current) => ({ ...current, [fieldId]: notes }))}
+            onPhotosChange={handlePhotosChange}
+            onPhotoDelete={handlePhotoDelete}
+            disabled={submissionStatus.status === 'submitting' || submissionStatus.status === 'validating' || Boolean(createdExamination)}
+            showLabels={true}
+            showHelp={true}
+            showRequired={true}
+            enablePhotoUpload={true}
+            forceArabicPhotoUpload={true}
+          />
+
+          {(formState.isDirty || Object.keys(formState.fields).length > 0) && (
+            <div className="mt-6 sm:mt-8 w-full max-w-full">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">ملخص الفحص</h2>
+                <button
+                  onClick={() => setShowSummary(!showSummary)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium self-start sm:self-auto"
+                >
+                  {showSummary ? 'إخفاء الملخص' : 'عرض الملخص'}
+                </button>
+              </div>
+
+              {showSummary && (
+                <InspectionFormSummary
+                  inspection={syntheticInspection}
+                  formState={formState}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        <InspectionCompletionModal
+          isOpen={showCompletionModal}
+          onClose={() => setShowCompletionModal(false)}
+          onSubmit={handleCompletionSubmit}
+          isSubmitting={submissionStatus.status === 'submitting'}
+          inspectionNumber={syntheticInspection.inspection_number}
+          forceArabic={true}
+        />
+
+        <UnsavedChangesModal
+          isOpen={navigation.showUnsavedModal}
+          onConfirm={navigation.handleModalConfirm}
+          onCancel={navigation.handleModalCancel}
+          showSaveOption={false}
+          message="لديك تغييرات غير محفوظة سيتم فقدانها إذا غادرت هذه الصفحة."
+        />
       </div>
-    </form>
+    </div>
   );
 };
 

@@ -3,6 +3,7 @@ import {
   Search,
   Filter,
   Calendar,
+  Download,
   CheckCircle,
   XCircle,
   Eye,
@@ -11,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useGetInspectionsQuery } from '../../store/api/inspectionApi';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 import type { InspectionFilters, InspectionStatus } from '../../types';
 
 interface InspectionListProps {
@@ -24,6 +27,9 @@ const InspectionList: React.FC<InspectionListProps> = ({ onInspectionSelect }) =
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
+  const token = useSelector((state: RootState) => state.auth.token);
+  const currentLanguage = useSelector((state: RootState) => state.localization?.currentLanguage);
 
   const { data, isLoading, error } = useGetInspectionsQuery(filters);
   const { t } = useTranslation();
@@ -83,6 +89,35 @@ const InspectionList: React.FC<InspectionListProps> = ({ onInspectionSelect }) =
 
   const handlePageChange = (page: number) => {
     setFilters(prev => ({ ...prev, page }));
+  };
+
+  const handleDownloadPdf = async (event: React.MouseEvent, inspectionId: number, inspectionNumber: string) => {
+    event.stopPropagation();
+    setDownloadingPdfId(inspectionId);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/inspections/${inspectionId}/download-pdf`, {
+        headers: {
+          Accept: 'application/pdf',
+          Authorization: token ? `Bearer ${token}` : '',
+          'App-Language': currentLanguage?.code || 'ar',
+          'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to download PDF');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `inspection-report-${inspectionNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setDownloadingPdfId(null);
+    }
   };
 
   if (isLoading) {
@@ -251,7 +286,17 @@ const InspectionList: React.FC<InspectionListProps> = ({ onInspectionSelect }) =
                   </div>
                 </div>
 
-                <div className="flex-shrink-0">
+                <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                  <button
+                    onClick={(event) => handleDownloadPdf(event, inspection.id, inspection.inspection_number)}
+                    disabled={downloadingPdfId === inspection.id}
+                    className="flex items-center justify-center gap-2 px-3 py-2 text-green-700 hover:bg-green-50 disabled:opacity-50 rounded-lg transition-colors text-sm w-full sm:w-auto"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {downloadingPdfId === inspection.id ? 'Downloading...' : 'Download PDF'}
+                    </span>
+                  </button>
                   <button className="flex items-center justify-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm w-full sm:w-auto">
                     <Eye className="h-4 w-4" />
                     <span className="hidden sm:inline">{t('inspections.list.view')}</span>
