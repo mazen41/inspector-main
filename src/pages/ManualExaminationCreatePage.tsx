@@ -379,7 +379,7 @@ const ManualExaminationCreatePage: React.FC = () => {
       formData.append('photos[]', processedFile);
       formData.append('field_id', String(upload.fieldId));
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${inspectionId}/upload-photos`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${inspectionId}/upload`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
