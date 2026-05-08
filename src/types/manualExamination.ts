@@ -101,7 +101,7 @@ export interface ManualExaminationDetailResponse {
 export interface ManualExaminationCarPayload {
   vin: string;
   plate_number?: string;
-  description: string;
+  description?: string;
   brand_id: number;
   model_id: number;
   category_id?: number;
@@ -111,10 +111,10 @@ export interface ManualExaminationCarPayload {
   manufacture_year: number;
   transmission: string;
   fuel_type: string;
-  location: string;
+  location?: string;
   price?: number;
-  country_id: number;
-  state_id: number;
+  country_id?: number;
+  state_id?: number;
   city_id?: number;
   main_photo: number;
   photos?: string;

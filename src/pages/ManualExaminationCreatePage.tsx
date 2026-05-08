@@ -10,8 +10,6 @@ import {
   useGetCarColorsQuery,
   useGetCarInspectionTypesQuery,
   useGetCarModelsByBrandQuery,
-  useGetManualCountriesQuery,
-  useGetManualStatesByCountryQuery,
 } from '../store/api/manualExaminationApi';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { useInspectionNavigation } from '../hooks/useInspectionNavigation';
@@ -32,12 +30,10 @@ import type {
   InspectionFormState,
   InspectionPhoto,
   InspectionSection,
-  Country,
   ManualExaminationCarPayload,
   ManualExaminationCreatePayload,
   ManualExaminationDetail,
   ManualExaminationFieldValuePayload,
-  State,
 } from '../types';
 import type { InspectionCompletionData } from '../types/form';
 import { compressImageIfNeeded } from '../utils/photoValidation';
@@ -45,7 +41,6 @@ import { processFieldsForDisplay } from '../utils/fieldUtils';
 
 type CarFormState = {
   vin: string;
-  description: string;
   brand_id: string;
   model_id: string;
   category_id: string;
@@ -55,14 +50,10 @@ type CarFormState = {
   manufacture_year: string;
   fuel_type: string;
   transmission: 'manual' | 'automatic' | '';
-  location: string;
-  country_id: string;
-  state_id: string;
 };
 
 const initialCarForm: CarFormState = {
   vin: '',
-  description: '',
   brand_id: '',
   model_id: '',
   category_id: '',
@@ -72,9 +63,6 @@ const initialCarForm: CarFormState = {
   manufacture_year: '',
   fuel_type: 'petrol',
   transmission: '',
-  location: '',
-  country_id: '',
-  state_id: '',
 };
 
 const lookupName = (item: CarLookupItem) => item.name || item.label || item.value || `#${item.id}`;
@@ -149,16 +137,9 @@ const ManualExaminationCreatePage: React.FC = () => {
   const { data: categories = [], isLoading: isLoadingCategories } = useGetCarCategoriesQuery();
   const { data: colors = [], isLoading: isLoadingColors } = useGetCarColorsQuery();
   const { data: inspectionTypes = [], isLoading: isLoadingInspectionTypes, error: inspectionTypesError } = useGetCarInspectionTypesQuery();
-  const { data: countriesRes, isLoading: isLoadingCountries } = useGetManualCountriesQuery();
-  const { data: statesRes, isLoading: isLoadingStates } = useGetManualStatesByCountryQuery(
-    carForm.country_id ? Number(carForm.country_id) : skipToken
-  );
-
   const [createManualExamination] = useCreateManualExaminationMutation();
-  const countries = countriesRes?.data || [];
-  const states = statesRes?.data || [];
   const selectedInspectionType = inspectionTypes.find((type) => String(type.id) === inspectionTypeId);
-  const isLoading = isLoadingBrands || isLoadingModels || isLoadingCategories || isLoadingColors || isLoadingInspectionTypes || isLoadingCountries || isLoadingStates;
+  const isLoading = isLoadingBrands || isLoadingModels || isLoadingCategories || isLoadingColors || isLoadingInspectionTypes;
 
   useEffect(() => {
     if (inspectionTypes.length > 0 && !inspectionTypeId) {
@@ -296,14 +277,12 @@ const ManualExaminationCreatePage: React.FC = () => {
       ...current,
       [field]: value,
       ...(field === 'brand_id' ? { model_id: '' } : {}),
-      ...(field === 'country_id' ? { state_id: '' } : {}),
     }));
   };
 
   const validateCarFields = useCallback(() => {
     const requiredCarFields: Array<keyof CarFormState> = [
       'vin',
-      'description',
       'brand_id',
       'model_id',
       'color_id',
@@ -312,16 +291,12 @@ const ManualExaminationCreatePage: React.FC = () => {
       'manufacture_year',
       'fuel_type',
       'transmission',
-      'location',
-      'country_id',
-      'state_id',
     ];
     const missing = requiredCarFields.filter((field) => !carForm[field]);
     const errors: string[] = [];
 
     if (missing.length > 0) errors.push('يرجى إكمال جميع بيانات المركبة المطلوبة قبل الإرسال.');
     if (carForm.vin && carForm.vin.length !== 17) errors.push('يجب أن يتكون رقم الهيكل من 17 خانة بالضبط.');
-    if (carForm.description && carForm.description.length < 10) errors.push('يجب ألا يقل وصف المركبة عن 10 أحرف.');
 
     return errors;
   }, [carForm]);
@@ -329,7 +304,6 @@ const ManualExaminationCreatePage: React.FC = () => {
   const buildPayload = useCallback((completionData: InspectionCompletionData): ManualExaminationCreatePayload => {
     const car: ManualExaminationCarPayload = {
       vin: carForm.vin,
-      description: carForm.description,
       brand_id: Number(carForm.brand_id),
       model_id: Number(carForm.model_id),
       category_id: carForm.category_id ? Number(carForm.category_id) : undefined,
@@ -339,9 +313,6 @@ const ManualExaminationCreatePage: React.FC = () => {
       manufacture_year: Number(carForm.manufacture_year),
       transmission: carForm.transmission,
       fuel_type: carForm.fuel_type,
-      location: carForm.location,
-      country_id: Number(carForm.country_id),
-      state_id: Number(carForm.state_id),
       city_id: undefined,
       main_photo: 0,
       photos: undefined,
@@ -693,23 +664,7 @@ const ManualExaminationCreatePage: React.FC = () => {
             {renderInput('الممشى', 'milage', 'number', true)}
             {renderSelect('نوع الوقود', 'fuel_type', [{ id: 'petrol', name: 'بنزين' }, { id: 'diesel', name: 'ديزل' }, { id: 'electric', name: 'كهرباء' }, { id: 'hybrid', name: 'هايبرد' }], true)}
             {renderSelect('ناقل الحركة', 'transmission', [{ id: 'automatic', name: 'أوتوماتيك' }, { id: 'manual', name: 'يدوي' }], true)}
-            {renderInput('الموقع', 'location', 'text', true)}
-            {renderSelect('الدولة', 'country_id', countries.map((country: Country) => ({ id: country.id, name: country.name })), true)}
-            {renderSelect('المنطقة', 'state_id', states.map((state: State) => ({ id: state.id, name: state.name })), true)}
           </div>
-          <label className="block mt-4 sm:mt-6">
-            <span className="block text-sm font-medium text-gray-700 mb-2 text-right">وصف المركبة<span className="text-red-500 mr-1">*</span></span>
-            <textarea
-              value={carForm.description}
-              onChange={(event) => updateCarField('description', event.target.value)}
-              disabled={submissionStatus.status === 'submitting' || Boolean(createdExamination)}
-              placeholder="اكتب وصفا واضحا لحالة المركبة وملاحظاتها"
-              dir="rtl"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 resize-none text-right"
-              rows={4}
-              required
-            />
-          </label>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
