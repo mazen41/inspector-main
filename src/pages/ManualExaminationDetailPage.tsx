@@ -1,7 +1,30 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, Car, ClipboardList } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Calendar, Camera, Car, CheckCircle, Download, Play, User, XCircle } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import { useGetManualExaminationQuery } from '../store/api/manualExaminationApi';
+import { useTranslation } from '../hooks/useTranslation';
+import InspectionFieldValues from '../components/inspections/InspectionFieldValues';
+import PhotoPreviewGrid from '../components/inspections/PhotoPreviewGrid';
+import PhotoModal from '../components/inspections/PhotoModal';
+import type { RootState } from '../store';
+import type { FieldValue, Inspection, InspectionPhoto, InspectionSection, ManualExaminationDetail, ManualExaminationField } from '../types';
+
+type RawPhoto = Partial<InspectionPhoto> & {
+  id?: number | string;
+  url?: string;
+  thumbnail_url?: string;
+  path?: string;
+  file_path?: string;
+  image?: string;
+  src?: string;
+  full_url?: string;
+  original_url?: string;
+  caption?: string;
+  name?: string;
+  uploaded_at?: string;
+  created_at?: string;
+};
 
 const displayValue = (value: unknown) => {
   if (value === null || value === undefined || value === '') return 'N/A';
@@ -10,13 +33,257 @@ const displayValue = (value: unknown) => {
   return String(value);
 };
 
+const getStatusColor = (status?: string) => {
+  switch (status) {
+    case 'scheduled':
+      return 'bg-blue-100 text-blue-800';
+    case 'in_progress':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'completed':
+      return 'bg-green-100 text-green-800';
+    case 'cancelled':
+    case 'failed':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const formatDate = (dateString?: string | null) => {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const getApiAssetBaseUrl = () => {
+  const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+
+  try {
+    const url = new URL(apiBaseUrl);
+    url.pathname = url.pathname.replace(/\/api(?:\/.*)?$/i, '');
+    return url.toString().replace(/\/+$/, '');
+  } catch {
+    return apiBaseUrl.replace(/\/api(?:\/.*)?$/i, '');
+  }
+};
+
+const resolvePhotoUrl = (value?: string | null) => {
+  if (!value) return '';
+  if (/^(https?:|blob:|data:)/i.test(value)) return value;
+
+  const assetBaseUrl = getApiAssetBaseUrl();
+  const cleanPath = value.replace(/^\/+/, '');
+  return `${assetBaseUrl}/${cleanPath}`;
+};
+
+const parsePhotoCollection = (photos: unknown): unknown[] => {
+  if (!photos) return [];
+  if (Array.isArray(photos)) return photos;
+  if (typeof photos === 'string') {
+    const trimmed = photos.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return trimmed.split(',').map((item) => item.trim()).filter(Boolean);
+    }
+  }
+
+  return [photos];
+};
+
+const normalizePhotos = (photos: unknown, fallbackCaption: string, fieldName?: string): Array<InspectionPhoto & { fieldName?: string }> => (
+  parsePhotoCollection(photos)
+    .map((item, index) => {
+      const raw: RawPhoto = typeof item === 'string' ? { url: item } : (item || {}) as RawPhoto;
+      const url = resolvePhotoUrl(raw.url || raw.full_url || raw.original_url || raw.path || raw.file_path || raw.image || raw.src);
+      const thumbnailUrl = resolvePhotoUrl(raw.thumbnail_url || raw.url || raw.path || raw.file_path || raw.image || raw.src);
+
+      if (!url && !thumbnailUrl) return null;
+
+      const numericId = Number(raw.id);
+      return {
+        id: Number.isFinite(numericId) ? numericId : -(index + 1),
+        url: url || thumbnailUrl,
+        thumbnail_url: thumbnailUrl || url,
+        caption: raw.caption || raw.name || fallbackCaption,
+        uploaded_at: raw.uploaded_at || raw.created_at || new Date().toISOString(),
+        ...(fieldName ? { fieldName } : {}),
+      } as InspectionPhoto & { fieldName?: string };
+    })
+    .filter((photo): photo is InspectionPhoto & { fieldName?: string } => Boolean(photo))
+);
+
+const normalizeField = (field: ManualExaminationField) => ({
+  id: field.id,
+  name: field.name,
+  description: field.description || undefined,
+  field_type: field.type,
+  type: field.type,
+  is_required: field.is_required,
+  required: field.is_required,
+  order: field.order,
+  sort_order: field.order,
+  value: (field.value ?? field.raw_value ?? null) as FieldValue,
+  score: typeof field.score === 'number' ? field.score : field.score ? Number(field.score) : null,
+  notes: field.notes || null,
+  is_flagged: field.is_flagged,
+  photos: normalizePhotos(field.photos, field.name),
+});
+
+const buildSyntheticInspection = (examination: ManualExaminationDetail): Inspection => {
+  const sections: InspectionSection[] = (examination.sections || []).map((section) => ({
+    id: section.id,
+    name: section.name,
+    description: section.description || undefined,
+    order: section.order,
+    fields: section.fields.map(normalizeField),
+  }));
+
+  return {
+    id: examination.id,
+    inspection_number: examination.inspection_number,
+    status: (examination.status as Inspection['status']) || 'completed',
+    scheduled_at: examination.created_at,
+    started_at: examination.created_at || undefined,
+    completed_at: examination.completed_at || undefined,
+    cancelled_at: undefined,
+    cancellation_reason: undefined,
+    car: {
+      id: examination.car.id || 0,
+      name: `${examination.car.make || ''} ${examination.car.model || ''}`.trim() || 'N/A',
+      brand: examination.car.make || '',
+      model: examination.car.model || '',
+      year: examination.car.year || undefined,
+      color: examination.car.color || undefined,
+      vin: examination.car.vin || undefined,
+      license_plate: examination.car.plate_number || undefined,
+      fuel_type: examination.car.fuel_type || undefined,
+      transmission_type: examination.car.transmission || undefined,
+    },
+    sections,
+    inspection_type: {
+      id: examination.inspection_type?.id || 0,
+      name: examination.inspection_type?.name || 'Manual Examination',
+      description: examination.inspection_type?.description || undefined,
+      price: 0,
+      estimated_duration: 0,
+      sections,
+    },
+    customer: {
+      id: 0,
+      name: 'Manual Examination',
+    },
+    actions: {
+      can_start: false,
+      can_complete: false,
+      can_cancel: false,
+      is_editable: false,
+    },
+    report_url: `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${examination.id}/download-pdf`,
+    photos: normalizePhotos(examination.car.photos, 'Vehicle photo'),
+    created_at: examination.created_at || new Date().toISOString(),
+    updated_at: examination.completed_at || examination.created_at || new Date().toISOString(),
+  };
+};
+
 const ManualExaminationDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const examinationId = Number(id);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const token = useSelector((state: RootState) => state.auth.token);
+  const currentLanguage = useSelector((state: RootState) => state.localization?.currentLanguage);
+  const { t } = useTranslation();
   const { data: examination, isLoading, error } = useGetManualExaminationQuery(examinationId, {
     skip: !id || Number.isNaN(examinationId),
   });
+
+  const syntheticInspection = useMemo(() => examination ? buildSyntheticInspection(examination) : null, [examination]);
+
+  const allPhotos = useMemo(() => {
+    if (!examination || !syntheticInspection) return [];
+
+    const fieldPhotos = syntheticInspection.sections?.flatMap((section) =>
+      section.fields.flatMap((field) => (field.photos || []).map((photo) => ({
+        ...photo,
+        fieldName: field.name,
+      })))
+    ) || [];
+
+    const sectionPhotos = (examination.sections || []).flatMap((section) =>
+      normalizePhotos(section.section_photos, section.name, section.name)
+    );
+
+    return [
+      ...(syntheticInspection.photos || []).map((photo) => ({ ...photo, fieldName: 'Vehicle Photos' })),
+      ...sectionPhotos,
+      ...fieldPhotos,
+    ];
+  }, [examination, syntheticInspection]);
+
+  const handlePhotoClick = (photo: InspectionPhoto) => {
+    const index = allPhotos.findIndex((item) => item.id === photo.id && item.url === photo.url);
+    if (index !== -1) {
+      setSelectedPhotoIndex(index);
+      setIsPhotoModalOpen(true);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!syntheticInspection?.report_url) return;
+
+    setIsDownloadingPdf(true);
+    setDownloadError(null);
+    try {
+      const response = await fetch(syntheticInspection.report_url, {
+        headers: {
+          Accept: 'application/pdf, application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+          'App-Language': currentLanguage?.code || 'ar',
+          'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
+        },
+      });
+
+      if (!response.ok) {
+        let message = `Download failed (HTTP ${response.status})`;
+        try {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const errorData = await response.json();
+            message = errorData?.error?.message || errorData?.message || message;
+          }
+        } catch {
+          // Keep the HTTP status message.
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `manual-examination-report-${syntheticInspection.inspection_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Failed to download PDF. Please try again.');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   if (!id || Number.isNaN(examinationId)) {
     return (
@@ -28,17 +295,22 @@ const ManualExaminationDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-64" />
-          <div className="h-48 bg-white rounded-lg shadow" />
-          <div className="h-64 bg-white rounded-lg shadow" />
+      <div className="p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-6" />
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4" />
+              <div className="h-4 bg-gray-200 rounded w-1/2" />
+              <div className="h-4 bg-gray-200 rounded w-2/3" />
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (error || !examination) {
+  if (error || !examination || !syntheticInspection) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -53,74 +325,66 @@ const ManualExaminationDetailPage: React.FC = () => {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 sm:mb-6">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
           <button
             onClick={() => navigate('/manual-examinations')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 flex-shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">{t('inspections.actions.back')}</span>
           </button>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
               {examination.inspection_number}
             </h1>
-            <span className="inline-block px-3 py-1 text-xs sm:text-sm font-medium rounded-full mt-1 bg-green-100 text-green-800">
-              {examination.status_display || examination.status}
+            <span className={`inline-block px-3 py-1 text-xs sm:text-sm font-medium rounded-full mt-1 ${getStatusColor(examination.status)}`}>
+              {examination.status_display || examination.status.replace('_', ' ').toUpperCase()}
             </span>
           </div>
         </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={isDownloadingPdf}
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors text-sm"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">{isDownloadingPdf ? 'Downloading...' : t('inspections.actions.downloadReport')}</span>
+            <span className="sm:hidden">PDF</span>
+          </button>
+        </div>
       </div>
+
+      {downloadError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-sm text-red-700 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span>{downloadError}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <ClipboardList className="h-5 w-5 text-gray-600" />
-              <h2 className="font-semibold text-gray-900">Examination Fields</h2>
+          {allPhotos.length > 0 && (
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Camera className="h-5 w-5 text-gray-600" />
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
+                  {t('inspections.fields.allPhotos')} ({allPhotos.length})
+                </h3>
+              </div>
+              <PhotoPreviewGrid
+                photos={allPhotos}
+                onPhotoClick={handlePhotoClick}
+                onPhotoDelete={() => undefined}
+                readOnly
+              />
             </div>
-            <div className="space-y-6">
-              {(examination.sections || []).map((section) => (
-                <div key={section.id}>
-                  <h3 className="font-medium text-gray-900 pb-2 border-b border-gray-200">{section.name}</h3>
-                  {section.description && <p className="text-sm text-gray-500 mt-2">{section.description}</p>}
-                  <div className="mt-3 overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 text-sm">
-                      <thead>
-                        <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          <th className="py-2 pr-4">Field</th>
-                          <th className="py-2 pr-4">Value</th>
-                          <th className="py-2 pr-4">Score</th>
-                          <th className="py-2 pr-4">Notes</th>
-                          <th className="py-2">Flag</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {section.fields.map((field) => (
-                          <tr key={field.id}>
-                            <td className="py-3 pr-4 font-medium text-gray-900">{field.name}</td>
-                            <td className="py-3 pr-4 text-gray-700">{displayValue(field.value ?? field.raw_value)}</td>
-                            <td className="py-3 pr-4 text-gray-700">{displayValue(field.score)}</td>
-                            <td className="py-3 pr-4 text-gray-700">{displayValue(field.notes)}</td>
-                            <td className="py-3 text-gray-700">
-                              {field.is_flagged ? (
-                                <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">
-                                  {field.flag_reason || 'Flagged'}
-                                </span>
-                              ) : (
-                                <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">No</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
+
+          <InspectionFieldValues inspection={syntheticInspection} readOnly />
 
           <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <h2 className="font-semibold text-gray-900 mb-4">Inspector Notes</h2>
@@ -149,17 +413,105 @@ const ManualExaminationDetailPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <Car className="h-5 w-5 text-gray-600" />
-              <h2 className="font-semibold text-gray-900">Car Information</h2>
+              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{t('inspections.fields.carInformation')}</h3>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div>
+                <span className="font-medium text-gray-700">{t('inspections.fields.name')}:</span>
+                <p className="text-gray-900 break-words">{syntheticInspection.car.name}</p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">{t('inspections.fields.brandModel')}:</span>
+                <p className="text-gray-900 break-words">{examination.car.make || 'N/A'} {examination.car.model || ''}</p>
+              </div>
+              {examination.car.year && (
+                <div>
+                  <span className="font-medium text-gray-700">{t('inspections.fields.year')}:</span>
+                  <p className="text-gray-900">{examination.car.year}</p>
+                </div>
+              )}
+              {examination.car.color && (
+                <div>
+                  <span className="font-medium text-gray-700">{t('inspections.fields.color')}:</span>
+                  <p className="text-gray-900 break-words">{examination.car.color}</p>
+                </div>
+              )}
+              {examination.car.vin && (
+                <div>
+                  <span className="font-medium text-gray-700">{t('inspections.fields.vin')}:</span>
+                  <p className="text-gray-900 font-mono text-xs break-all">{examination.car.vin}</p>
+                </div>
+              )}
+              {examination.car.plate_number && (
+                <div>
+                  <span className="font-medium text-gray-700">Plate Number:</span>
+                  <p className="text-gray-900 break-words">{examination.car.plate_number}</p>
+                </div>
+              )}
+              {examination.car.description && (
+                <div>
+                  <span className="font-medium text-gray-700">Description:</span>
+                  <p className="text-gray-900 whitespace-pre-wrap">{examination.car.description}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+              {t('inspections.details.inspectionDetails')}
+            </h2>
+
+            <div className="grid grid-cols-1 gap-6">
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">{t('inspections.details.timeline')}</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <span className="break-words">Created: {formatDate(examination.created_at)}</span>
+                  </div>
+                  {examination.created_at && (
+                    <div className="flex items-start gap-2">
+                      <Play className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="break-words">Started: {formatDate(examination.created_at)}</span>
+                    </div>
+                  )}
+                  {examination.completed_at && (
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="break-words">Completed: {formatDate(examination.completed_at)}</span>
+                    </div>
+                  )}
+                  {(examination.status === 'cancelled' || examination.status === 'failed') && (
+                    <div className="flex items-start gap-2">
+                      <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <span className="break-words">{examination.status_display || examination.status}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">{t('inspections.details.inspectionType')}</h3>
+                <div className="text-sm text-gray-600">
+                  <p className="font-medium break-words">{examination.inspection_type?.name || 'N/A'}</p>
+                  {examination.inspection_type?.description && (
+                    <p className="mt-1 break-words">{examination.inspection_type.description}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <User className="h-5 w-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Additional Car Details</h3>
             </div>
             <div className="space-y-3 text-sm">
               {[
-                ['Make', examination.car.make],
-                ['Model', examination.car.model],
-                ['Year', examination.car.year],
-                ['VIN', examination.car.vin],
-                ['Plate Number', examination.car.plate_number],
                 ['Category', examination.car.category],
-                ['Color', examination.car.color],
                 ['Condition', examination.car.condition],
                 ['Mileage', examination.car.milage],
                 ['Transmission', examination.car.transmission],
@@ -169,57 +521,26 @@ const ManualExaminationDetailPage: React.FC = () => {
                 ['Country', examination.car.country],
                 ['State', examination.car.state],
                 ['City', examination.car.city],
-                ['Main Photo ID', examination.car.main_photo],
-                ['Photos', examination.car.photos],
               ].map(([label, value]) => (
                 <div key={label as string}>
                   <span className="font-medium text-gray-700">{label}:</span>
                   <p className="text-gray-900 break-words">{displayValue(value)}</p>
                 </div>
               ))}
-              <div>
-                <span className="font-medium text-gray-700">Description:</span>
-                <p className="text-gray-900 whitespace-pre-wrap">{displayValue(examination.car.description)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Extras</h2>
-            <div className="space-y-4 text-sm">
-              <div>
-                <span className="font-medium text-gray-700">Features</span>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {(examination.car.features || []).length > 0 ? (
-                    examination.car.features?.map((feature) => (
-                      <span key={feature.id} className="px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-xs">
-                        {feature.name}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-gray-500">N/A</p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <span className="font-medium text-gray-700">Custom Fields</span>
-                <div className="mt-2 space-y-2">
-                  {(examination.car.custom_fields || []).length > 0 ? (
-                    examination.car.custom_fields?.map((field) => (
-                      <div key={field.id} className="flex justify-between gap-3">
-                        <span className="text-gray-600">{field.name}</span>
-                        <span className="text-gray-900">{displayValue(field.value)}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500">N/A</p>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {allPhotos.length > 0 && (
+        <PhotoModal
+          photos={allPhotos}
+          currentIndex={selectedPhotoIndex}
+          isOpen={isPhotoModalOpen}
+          onClose={() => setIsPhotoModalOpen(false)}
+          readOnly
+        />
+      )}
     </div>
   );
 };

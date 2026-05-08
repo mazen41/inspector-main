@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
   ArrowLeft,
   Calendar,
@@ -25,6 +26,7 @@ import InspectionCompletionModal, { type InspectionCompletionData } from './Insp
 import PhotoPreviewGrid from './PhotoPreviewGrid';
 import PhotoModal from './PhotoModal';
 import type { InspectionStatus, InspectionPhoto } from '../../types';
+import type { RootState } from '../../store';
 
 interface InspectionDetailProps {
   inspectionId: number;
@@ -41,6 +43,10 @@ const InspectionDetail: React.FC<InspectionDetailProps> = ({
   const [cancelReason, setCancelReason] = useState('');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const token = useSelector((state: RootState) => state.auth.token);
+  const currentLanguage = useSelector((state: RootState) => state.localization?.currentLanguage);
   const { t } = useTranslation();
 
   const { data: inspection, isLoading, error } = useGetInspectionQuery(inspectionId);
@@ -150,10 +156,61 @@ const InspectionDetail: React.FC<InspectionDetailProps> = ({
     }
   };
 
-  const handlePhotoDelete = (_photoId: number) => {
+  const handlePhotoDelete = () => {
     // In read-only mode, we don't allow deletion
     console.log('Photo deletion not available in read-only mode');
   };
+
+  const getReportDownloadUrl = () => {
+    if (inspection?.report_url) return inspection.report_url;
+    return `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/inspections/${inspectionId}/download-pdf`;
+  };
+
+  const handleDownloadReport = async () => {
+    if (!inspection) return;
+
+    setIsDownloadingReport(true);
+    setDownloadError(null);
+    try {
+      const response = await fetch(getReportDownloadUrl(), {
+        headers: {
+          Accept: 'application/pdf, application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+          'App-Language': currentLanguage?.code || 'ar',
+          'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
+        },
+      });
+
+      if (!response.ok) {
+        let message = `Download failed (HTTP ${response.status})`;
+        try {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const errorData = await response.json();
+            message = errorData?.error?.message || errorData?.message || message;
+          }
+        } catch {
+          // Keep HTTP status message.
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `inspection-report-${inspection.inspection_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Failed to download PDF. Please try again.');
+    } finally {
+      setIsDownloadingReport(false);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -229,18 +286,16 @@ const InspectionDetail: React.FC<InspectionDetailProps> = ({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-          {inspection.report_url && (
-            <a
-              href={inspection.report_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
-            >
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('inspections.actions.downloadReport')}</span>
-              <span className="sm:hidden">Report</span>
-            </a>
-          )}
+          <button
+            type="button"
+            onClick={handleDownloadReport}
+            disabled={isDownloadingReport}
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors text-sm"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">{isDownloadingReport ? 'Downloading...' : t('inspections.actions.downloadReport')}</span>
+            <span className="sm:hidden">Report</span>
+          </button>
 
           {isEditable && (
             <button
@@ -289,6 +344,13 @@ const InspectionDetail: React.FC<InspectionDetailProps> = ({
           )}
         </div>
       </div>
+
+      {downloadError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-sm text-red-700 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span>{downloadError}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main Content */}
