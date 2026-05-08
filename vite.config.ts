@@ -8,6 +8,14 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '')
 
+  let apiProxyUrl: URL
+  try {
+    apiProxyUrl = new URL(env.VITE_API_BASE_URL || 'http://samh.test/api')
+  } catch {
+    apiProxyUrl = new URL('http://samh.test/api')
+  }
+  const apiProxyPath = apiProxyUrl.pathname.replace(/\/+$/, '') || '/api'
+
   return {
     plugins: [
       react(),
@@ -27,19 +35,19 @@ export default defineConfig(({ mode }) => {
       port: parseInt(env.VITE_PORT) || 3000,
       host: env.VITE_HOST === 'true' || true,
       proxy: {
-        '/api': {
-          target: 'http://samh.test',
+        [apiProxyPath]: {
+          target: apiProxyUrl.origin,
           changeOrigin: true,
           secure: env.VITE_API_SECURE === 'true',
-          configure: (proxy, _options) => {
+          configure: (proxy) => {
             if (mode === 'development') {
-              proxy.on('error', (err, _req, _res) => {
+              proxy.on('error', (err) => {
                 console.log('proxy error', err);
               });
-              proxy.on('proxyReq', (_proxyReq, req, _res) => {
+              proxy.on('proxyReq', (_proxyReq, req) => {
                 console.log('Sending Request to the Target:', req.method, req.url);
               });
-              proxy.on('proxyRes', (proxyRes, req, _res) => {
+              proxy.on('proxyRes', (proxyRes, req) => {
                 console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
               });
             }

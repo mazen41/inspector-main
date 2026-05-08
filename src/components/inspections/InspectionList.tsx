@@ -15,6 +15,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import type { InspectionFilters, InspectionStatus } from '../../types';
+import { buildInspectorApiUrl } from '../../utils/apiUrl';
 
 interface InspectionListProps {
   onInspectionSelect?: (inspectionId: number) => void;
@@ -28,6 +29,7 @@ const InspectionList: React.FC<InspectionListProps> = ({ onInspectionSelect }) =
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const token = useSelector((state: RootState) => state.auth.token);
   const currentLanguage = useSelector((state: RootState) => state.localization?.currentLanguage);
 
@@ -83,7 +85,7 @@ const InspectionList: React.FC<InspectionListProps> = ({ onInspectionSelect }) =
     setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
   };
 
-  const handleFilterChange = (key: keyof InspectionFilters, value: any) => {
+  const handleFilterChange = (key: keyof InspectionFilters, value: InspectionFilters[keyof InspectionFilters]) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
   };
 
@@ -94,17 +96,37 @@ const InspectionList: React.FC<InspectionListProps> = ({ onInspectionSelect }) =
   const handleDownloadPdf = async (event: React.MouseEvent, inspectionId: number, inspectionNumber: string) => {
     event.stopPropagation();
     setDownloadingPdfId(inspectionId);
+    setDownloadError(null);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/inspections/${inspectionId}/download-pdf`, {
+      const response = await fetch(buildInspectorApiUrl(`/inspections/${inspectionId}/download-pdf`), {
+        method: 'GET',
+        credentials: 'omit',
         headers: {
-          Accept: 'application/pdf',
+          Accept: 'application/pdf, application/json',
           Authorization: token ? `Bearer ${token}` : '',
           'App-Language': currentLanguage?.code || 'ar',
           'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
         },
       });
 
-      if (!response.ok) throw new Error('Failed to download PDF');
+      if (!response.ok) {
+        let message = `Download failed (HTTP ${response.status})`;
+        try {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const errorData = await response.json();
+            message = errorData?.error?.message || errorData?.message || message;
+          }
+        } catch {
+          // Keep the HTTP status message.
+        }
+        throw new Error(message);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/pdf')) {
+        throw new Error('Server did not return a PDF. Please try again later.');
+      }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -115,6 +137,8 @@ const InspectionList: React.FC<InspectionListProps> = ({ onInspectionSelect }) =
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      setDownloadError(err instanceof Error ? err.message : 'Failed to download PDF. Please try again.');
     } finally {
       setDownloadingPdfId(null);
     }
@@ -236,6 +260,12 @@ const InspectionList: React.FC<InspectionListProps> = ({ onInspectionSelect }) =
           </div>
         )}
       </div>
+
+      {downloadError && (
+        <div className="mx-4 sm:mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {downloadError}
+        </div>
+      )}
 
       {/* Inspections List */}
       <div className="divide-y divide-gray-200">
