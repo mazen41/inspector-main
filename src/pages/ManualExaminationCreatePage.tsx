@@ -13,7 +13,6 @@ import {
   useGetManualCountriesQuery,
   useGetManualStatesByCountryQuery,
 } from '../store/api/manualExaminationApi';
-import { useUploadInspectionPhotoMutation } from '../store/api/inspectionApi';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { useInspectionNavigation } from '../hooks/useInspectionNavigation';
 import {
@@ -156,7 +155,6 @@ const ManualExaminationCreatePage: React.FC = () => {
   );
 
   const [createManualExamination] = useCreateManualExaminationMutation();
-  const [uploadInspectionPhoto] = useUploadInspectionPhotoMutation();
   const countries = countriesRes?.data || [];
   const states = statesRes?.data || [];
   const selectedInspectionType = inspectionTypes.find((type) => String(type.id) === inspectionTypeId);
@@ -290,7 +288,7 @@ const ManualExaminationCreatePage: React.FC = () => {
     report_url: createdExamination ? `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${createdExamination.id}/download-pdf` : undefined,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  }), [brands, carForm, colors, createdExamination, models, sections, visibleSections, selectedInspectionType]);
+  }), [brands, carForm, colors, createdExamination, models, visibleSections, selectedInspectionType]);
 
   const updateCarField = (field: keyof CarFormState, value: string) => {
     setCreatedExamination(null);
@@ -406,13 +404,26 @@ const ManualExaminationCreatePage: React.FC = () => {
 
     for (const upload of pendingUploads) {
       const processedFile = await compressImageIfNeeded(upload.file, 2);
-      await uploadInspectionPhoto({
-        id: inspectionId,
-        file: processedFile,
-        fieldId: upload.fieldId,
-      }).unwrap();
+      const formData = new FormData();
+      formData.append('photos[]', processedFile);
+      formData.append('field_id', String(upload.fieldId));
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${inspectionId}/upload-photos`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+          'App-Language': currentLanguage?.code || 'ar',
+          'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('تعذر رفع صور حقول الفحص.');
+      }
     }
-  }, [fieldPhotos, uploadInspectionPhoto]);
+  }, [currentLanguage?.code, fieldPhotos, token]);
 
   const uploadVehiclePhotos = useCallback(async (inspectionId: number) => {
     const files = vehiclePhotos
