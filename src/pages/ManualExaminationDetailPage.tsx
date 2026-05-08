@@ -193,7 +193,7 @@ const buildSyntheticInspection = (examination: ManualExaminationDetail): Inspect
       can_cancel: false,
       is_editable: false,
     },
-    report_url: `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${examination.id}/download-pdf`,
+    report_url: `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${examination.id}/download`,
     photos: normalizePhotos(examination.car.photos, 'Vehicle photo'),
     created_at: examination.created_at || new Date().toISOString(),
     updated_at: examination.completed_at || examination.created_at || new Date().toISOString(),
@@ -202,7 +202,7 @@ const buildSyntheticInspection = (examination: ManualExaminationDetail): Inspect
 
 /** Image component with built-in error handling and fallback */
 const SafeImage: React.FC<{
-  src: string;
+  src?: string;
   alt: string;
   className?: string;
   onClick?: () => void;
@@ -210,7 +210,7 @@ const SafeImage: React.FC<{
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  if (hasError) {
+  if (!src || hasError) {
     return (
       <div
         className={`flex flex-col items-center justify-center bg-gray-100 border border-gray-200 rounded ${className || ''}`}

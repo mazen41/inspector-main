@@ -32,7 +32,7 @@ const ManualExaminationsPage: React.FC = () => {
     try {
       // Build URL using the same base as the RTK Query apiSlice:
       // VITE_API_BASE_URL already includes "/api", so we append the versioned inspector path directly.
-      const url = `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${examinationId}/download-pdf`;
+      const url = `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${examinationId}/download`;
 
       const response = await fetch(url, {
         method: 'GET',

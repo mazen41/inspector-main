@@ -23,13 +23,13 @@ export const useAuth = () => {
   const [logoutMutation] = useLogoutMutation();
   const [refreshTokenMutation] = useRefreshTokenMutation();
   
-  // Only fetch current user if we have a token but no user data
+  // Keep server-side permission changes reflected in the local session.
   const { 
     data: currentUserData, 
     error: currentUserError,
     isLoading: isCurrentUserLoading 
   } = useGetCurrentUserQuery(undefined, {
-    skip: !token || !!user || !isAuthenticated,
+    skip: !token || !isAuthenticated,
   });
 
   // Initialize authentication state on app load
@@ -41,13 +41,13 @@ export const useAuth = () => {
 
   // Handle current user data
   useEffect(() => {
-    if (currentUserData && token && !user) {
+    if (currentUserData && token) {
       dispatch(setCredentials({
         user: currentUserData,
         token,
       }));
     }
-  }, [currentUserData, token, user, dispatch]);
+  }, [currentUserData, token, dispatch]);
 
   // Handle authentication errors (invalid token, etc.)
   useEffect(() => {

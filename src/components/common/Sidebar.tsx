@@ -18,38 +18,48 @@ interface NavigationItem {
   description?: string;
 }
 
-const getNavigation = (t: (key: string) => string): NavigationItem[] => [
-  { 
-    name: t('navigation.dashboard'), 
-    href: ROUTES.DASHBOARD, 
-    icon: LayoutDashboard,
-    description: t('navigation.dashboardDescription')
-  },
-  { 
-    name: t('navigation.inspections'), 
-    href: ROUTES.INSPECTIONS, 
-    icon: ClipboardList,
-    description: t('navigation.inspectionsDescription')
-  },
-  {
-    name: t('navigation.manualExaminations'),
-    href: ROUTES.MANUAL_EXAMINATIONS,
-    icon: ClipboardCheck,
-    description: t('navigation.manualExaminationsDescription')
-  },
-  { 
-    name: t('navigation.payments'), 
-    href: ROUTES.PAYMENTS, 
-    icon: CreditCard,
-    description: t('navigation.paymentsDescription')
-  },
-  { 
-    name: t('navigation.profile'), 
-    href: ROUTES.PROFILE, 
-    icon: User,
-    description: t('navigation.profileDescription')
-  },
-];
+const getNavigation = (t: (key: string) => string, canManualExamination: boolean): NavigationItem[] => {
+  const items: NavigationItem[] = [
+    { 
+      name: t('navigation.dashboard'), 
+      href: ROUTES.DASHBOARD, 
+      icon: LayoutDashboard,
+      description: t('navigation.dashboardDescription')
+    },
+    { 
+      name: t('navigation.inspections'), 
+      href: ROUTES.INSPECTIONS, 
+      icon: ClipboardList,
+      description: t('navigation.inspectionsDescription')
+    },
+  ];
+
+  if (canManualExamination) {
+    items.push({
+      name: t('navigation.manualExaminations'),
+      href: ROUTES.MANUAL_EXAMINATIONS,
+      icon: ClipboardCheck,
+      description: t('navigation.manualExaminationsDescription')
+    });
+  }
+
+  items.push(
+    { 
+      name: t('navigation.payments'), 
+      href: ROUTES.PAYMENTS, 
+      icon: CreditCard,
+      description: t('navigation.paymentsDescription')
+    },
+    { 
+      name: t('navigation.profile'), 
+      href: ROUTES.PROFILE, 
+      icon: User,
+      description: t('navigation.profileDescription')
+    },
+  );
+
+  return items;
+};
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -60,7 +70,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
   const location = useLocation();
   const { user } = useAuth();
   const { isRTL, t } = useTranslation();
-  const navigation = getNavigation(t);
+  const canManualExamination = user?.inspector?.permissions?.can_manual_examination !== false;
+  const navigation = getNavigation(t, canManualExamination);
 
   // Check if current route matches navigation item
   const isActiveRoute = (href: string): boolean => {

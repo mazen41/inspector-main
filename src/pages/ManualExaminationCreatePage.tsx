@@ -270,7 +270,7 @@ const ManualExaminationCreatePage: React.FC = () => {
       can_cancel: false,
       is_editable: !createdExamination,
     },
-    report_url: createdExamination ? `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${createdExamination.id}/download-pdf` : undefined,
+    report_url: createdExamination ? `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${createdExamination.id}/download` : undefined,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }), [brands, carForm, colors, createdExamination, models, visibleSections, selectedInspectionType]);

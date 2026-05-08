@@ -60,7 +60,18 @@ const LanguageInitializer: React.FC<{ children: React.ReactNode }> = ({ children
 
 // App Routes Component
 const AppRoutes: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const canManualExamination = user?.inspector?.permissions?.can_manual_examination !== false;
+
+  const manualRoute = (page: React.ReactNode) => (
+    <ProtectedRoute>
+      {canManualExamination ? (
+        <Layout>{page}</Layout>
+      ) : (
+        <Navigate to={ROUTES.DASHBOARD} replace />
+      )}
+    </ProtectedRoute>
+  );
 
   return (
     <Routes>
@@ -121,35 +132,17 @@ const AppRoutes: React.FC = () => {
 
       <Route
         path={ROUTES.MANUAL_EXAMINATIONS}
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ManualExaminationsPage />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={manualRoute(<ManualExaminationsPage />)}
       />
 
       <Route
         path={ROUTES.MANUAL_EXAMINATION_CREATE}
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ManualExaminationCreatePage />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={manualRoute(<ManualExaminationCreatePage />)}
       />
 
       <Route
         path={ROUTES.MANUAL_EXAMINATION_DETAIL}
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ManualExaminationDetailPage />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={manualRoute(<ManualExaminationDetailPage />)}
       />
       
       <Route
