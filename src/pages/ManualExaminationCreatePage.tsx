@@ -402,8 +402,8 @@ const ManualExaminationCreatePage: React.FC = () => {
       });
 
       if ('error' in response) {
-        const status = Number(response.error.status || 0);
-        const backendMessage = (response.error as { data?: { message?: string } }).data?.message || 'تعذر رفع صور حقول الفحص.';
+        const status = Number((response.error as any)?.status || 0);
+        const backendMessage = (response.error as any)?.data?.message || 'تعذر رفع صور حقول الفحص.';
         throw new Error(`تعذر رفع صور حقول الفحص. endpoint=/manual-examinations/${inspectionId}/section-photos method=POST status=${status} backend_message=${backendMessage}`);
       }
     }
@@ -423,8 +423,8 @@ const ManualExaminationCreatePage: React.FC = () => {
     });
 
     if ('error' in response) {
-      const status = Number(response.error.status || 0);
-      const backendMessage = (response.error as { data?: { message?: string } }).data?.message || 'تعذر رفع صور المركبة.';
+      const status = Number((response.error as any)?.status || 0);
+      const backendMessage = (response.error as any)?.data?.message || 'تعذر رفع صور المركبة.';
       throw new Error(`تعذر رفع صور المركبة. endpoint=/manual-examinations/${inspectionId}/vehicle-photos method=POST status=${status} backend_message=${backendMessage}`);
     }
   }, [uploadManualExaminationVehiclePhotos, vehiclePhotos]);

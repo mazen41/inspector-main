@@ -32,8 +32,8 @@ export interface ManualExaminationDetail extends ManualExaminationListItem {
     country?: string | null;
     state?: string | null;
     city?: string | null;
-    main_photo?: number | null;
-    photos?: string | null;
+    main_photo?: number | string | null;
+    photos?: unknown[] | string | null;
     features?: Array<{ id: number; name: string | null; section?: string | null }>;
     custom_fields?: Array<{ id: number; name: string | null; value: unknown }>;
   };

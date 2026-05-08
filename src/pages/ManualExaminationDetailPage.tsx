@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, Calendar, Camera, Car, CheckCircle, Download, Play, User, XCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Calendar, Camera, Car, CheckCircle, Download, ImageOff, Play, User, XCircle } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useGetManualExaminationQuery } from '../store/api/manualExaminationApi';
 import { useTranslation } from '../hooks/useTranslation';
 import InspectionFieldValues from '../components/inspections/InspectionFieldValues';
-import PhotoPreviewGrid from '../components/inspections/PhotoPreviewGrid';
 import PhotoModal from '../components/inspections/PhotoModal';
 import type { RootState } from '../store';
 import type { FieldValue, Inspection, InspectionPhoto, InspectionSection, ManualExaminationDetail, ManualExaminationField } from '../types';
@@ -78,6 +77,13 @@ const resolvePhotoUrl = (value?: string | null) => {
 
   const assetBaseUrl = getApiAssetBaseUrl();
   const cleanPath = value.replace(/^\/+/, '');
+
+  // Handle storage paths specifically
+  if (cleanPath.startsWith('car-inspections/') || cleanPath.startsWith('storage/')) {
+    const storagePath = cleanPath.replace(/^storage\//, '');
+    return `${assetBaseUrl}/storage/${storagePath}`;
+  }
+
   return `${assetBaseUrl}/${cleanPath}`;
 };
 
@@ -192,6 +198,46 @@ const buildSyntheticInspection = (examination: ManualExaminationDetail): Inspect
     created_at: examination.created_at || new Date().toISOString(),
     updated_at: examination.completed_at || examination.created_at || new Date().toISOString(),
   };
+};
+
+/** Image component with built-in error handling and fallback */
+const SafeImage: React.FC<{
+  src: string;
+  alt: string;
+  className?: string;
+  onClick?: () => void;
+}> = ({ src, alt, className, onClick }) => {
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  if (hasError) {
+    return (
+      <div
+        className={`flex flex-col items-center justify-center bg-gray-100 border border-gray-200 rounded ${className || ''}`}
+        style={{ minHeight: '120px' }}
+      >
+        <ImageOff className="h-8 w-8 text-gray-400 mb-2" />
+        <span className="text-xs text-gray-500 font-medium px-2 text-center">Image unavailable</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative ${className || ''}`}>
+      {isLoading && (
+        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded" />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'} ${className || ''}`}
+        onClick={onClick}
+        onError={() => setHasError(true)}
+        onLoad={() => setIsLoading(false)}
+        loading="lazy"
+      />
+    </div>
+  );
 };
 
 const ManualExaminationDetailPage: React.FC = () => {
@@ -367,20 +413,59 @@ const ManualExaminationDetailPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          {/* Vehicle Photos Section */}
           {allPhotos.length > 0 && (
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Camera className="h-5 w-5 text-gray-600" />
-                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
-                  {t('inspections.fields.allPhotos')} ({allPhotos.length})
-                </h3>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="px-4 sm:px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-blue-50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-xl">
+                    <Camera className="h-5 w-5 text-blue-700" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {t('inspections.fields.allPhotos')} ({allPhotos.length})
+                    </h3>
+                    <p className="text-sm text-slate-500">Vehicle, section, and field photos from this examination</p>
+                  </div>
+                </div>
               </div>
-              <PhotoPreviewGrid
-                photos={allPhotos}
-                onPhotoClick={handlePhotoClick}
-                onPhotoDelete={() => undefined}
-                readOnly
-              />
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  {allPhotos.map((photo, index) => {
+                    const photoLabel = (photo as InspectionPhoto & { fieldName?: string }).fieldName || photo.caption || 'Photo';
+
+                    return (
+                      <button
+                        key={`gallery-${photo.id}-${index}`}
+                        type="button"
+                        className="group relative text-left rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 aspect-square"
+                        onClick={() => handlePhotoClick(photo)}
+                      >
+                        <SafeImage
+                          src={photo.url || photo.thumbnail_url}
+                          alt={photo.caption || 'Vehicle photo'}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent">
+                          <p className="text-white text-xs sm:text-sm font-semibold truncate">{photoLabel}</p>
+                          <p className="text-slate-200 text-[11px] mt-0.5 truncate">{photo.caption || 'Tap to preview'}</p>
+                        </div>
+                        <div className="absolute inset-0 ring-0 ring-blue-300 group-hover:ring-2 transition-all rounded-2xl" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {allPhotos.length === 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-dashed border-slate-300 p-8 text-center">
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                  <Camera className="h-5 w-5 text-blue-600" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900">No photos available</h3>
+              <p className="text-sm text-slate-500 mt-1">This manual examination does not have any uploaded images yet.</p>
             </div>
           )}
 
