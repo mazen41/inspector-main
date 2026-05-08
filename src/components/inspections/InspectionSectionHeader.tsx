@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { InspectionSection, InspectionFormState } from '../../types/inspection';
+import { isFieldValueAnswered } from '../../utils/validation';
 
 interface InspectionSectionHeaderProps {
   section: InspectionSection;
@@ -44,11 +45,9 @@ const InspectionSectionHeader: React.FC<InspectionSectionHeaderProps> = ({
       }
 
       // Check if field has a meaningful value
-      const hasValue = fieldState?.value !== null && 
-                      fieldState?.value !== undefined && 
-                      fieldState?.value !== '';
+      const hasAnswered = fieldState ? isFieldValueAnswered(fieldState.value) : false;
 
-      if (hasValue) {
+      if (hasAnswered) {
         completedFields++;
         if (isRequired) {
           completedRequiredFields++;

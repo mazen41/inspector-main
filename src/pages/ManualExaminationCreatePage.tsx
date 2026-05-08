@@ -42,6 +42,7 @@ import type {
 } from '../types';
 import type { InspectionCompletionData } from '../types/form';
 import { compressImageIfNeeded } from '../utils/photoValidation';
+import { processFieldsForDisplay } from '../utils/fieldUtils';
 
 type CarFormState = {
   vin: string;
@@ -223,15 +224,34 @@ const ManualExaminationCreatePage: React.FC = () => {
     isValid: formValidation.isValid,
   }), [formValidation.fieldStates, formValidation.isDirty, formValidation.isSubmitting, formValidation.isValid]);
 
+  const fieldValuesForVisibility = useMemo(() => {
+    const out: Record<number, FieldValue> = {};
+    Object.entries(formValidation.fieldStates).forEach(([fieldId, state]) => {
+      out[Number(fieldId)] = state.value;
+    });
+    return out;
+  }, [formValidation.fieldStates]);
+
+  const visibleSections = useMemo(
+    () => sections
+      .map((section) => ({
+        ...section,
+        fields: processFieldsForDisplay(section.fields, fieldValuesForVisibility),
+      }))
+      .filter((section) => section.fields.length > 0),
+    [sections, fieldValuesForVisibility],
+  );
+
   const carHasUnsavedChanges = Object.entries(carForm).some(([field, value]) => (
     value !== initialCarForm[field as keyof CarFormState]
   ));
-  const hasUnsavedChanges = formValidation.isDirty || Object.values(fieldNotes).some(Boolean) || vehiclePhotos.length > 0 || carHasUnsavedChanges;
+  const hasUnsavedChanges = formValidation.isDirty || Object.values(fieldNotes).some(Boolean) || vehiclePhotos.length > 0
+    || Object.values(fieldPhotos).some((photos) => photos.length > 0) || carHasUnsavedChanges;
 
   const syntheticInspection: Inspection = useMemo(() => ({
     id: createdExamination?.id || 0,
     inspection_number: createdExamination?.inspection_number || 'فحص يدوي جديد',
-    status: createdExamination?.status as Inspection['status'] || 'in_progress',
+    status: (createdExamination?.status as Inspection['status']) || 'in_progress',
     scheduled_at: null,
     started_at: undefined,
     completed_at: createdExamination?.completed_at || undefined,
@@ -248,14 +268,14 @@ const ManualExaminationCreatePage: React.FC = () => {
       fuel_type: carForm.fuel_type,
       transmission_type: carForm.transmission,
     },
-    sections,
+    sections: visibleSections,
     inspection_type: {
       id: selectedInspectionType?.id || 0,
       name: toArabicText(selectedInspectionType?.name, 'فحص يدوي'),
       description: selectedInspectionType?.description,
       price: selectedInspectionType?.price || 0,
       estimated_duration: 0,
-      sections,
+      sections: visibleSections,
     },
     customer: {
       id: 0,
@@ -270,7 +290,7 @@ const ManualExaminationCreatePage: React.FC = () => {
     report_url: createdExamination ? `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${createdExamination.id}/download-pdf` : undefined,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  }), [brands, carForm, colors, createdExamination, models, sections, selectedInspectionType]);
+  }), [brands, carForm, colors, createdExamination, models, sections, visibleSections, selectedInspectionType]);
 
   const updateCarField = (field: keyof CarFormState, value: string) => {
     setCreatedExamination(null);
@@ -695,14 +715,14 @@ const ManualExaminationCreatePage: React.FC = () => {
         </div>
 
         <InspectionFormProgress
-          sections={sections}
+          sections={visibleSections}
           formState={formState}
           forceArabic={true}
         />
 
         <div className="space-y-8 w-full max-w-full overflow-x-hidden">
           <InspectionFieldsRenderer
-            sections={sections}
+            sections={visibleSections}
             formState={formState}
             fieldNotes={fieldNotes}
             fieldPhotos={fieldPhotos}

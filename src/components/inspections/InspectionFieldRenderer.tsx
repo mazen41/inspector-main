@@ -236,14 +236,29 @@ const InspectionFieldRenderer: React.FC<InspectionFieldRendererProps> = React.me
     );
   };
 
-  // Render photo upload component
-  const renderPhotoUpload = () => {
-    if (!enablePhotoUpload || !inspectionId || !onPhotosChange) {
+  // Render photo upload (per-field / per-attribute — works before inspection exists via local pending files)
+  const renderPhotoUploadSection = () => {
+    if (!enablePhotoUpload || !onPhotosChange) {
       return null;
     }
 
+    const attributeLabel = field.display_name || field.name;
+
     return (
-      <div className="mt-3">
+      <div
+        className={
+          forceArabicPhotoUpload
+            ? 'mb-4 rounded-xl border border-slate-200 bg-slate-50/90 p-4 sm:p-5'
+            : 'mt-3'
+        }
+      >
+        {forceArabicPhotoUpload && (
+          <div className="mb-3 text-right space-y-1" dir="rtl">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">صور الصفة</p>
+            <p className="text-sm font-semibold text-slate-900">{attributeLabel}</p>
+            <p className="text-xs text-slate-600">يمكنك إرفاق صورة واحدة أو أكثر لهذا البند.</p>
+          </div>
+        )}
         <FieldPhotoUpload
           inspectionId={inspectionId}
           fieldId={field.id}
@@ -257,7 +272,7 @@ const InspectionFieldRenderer: React.FC<InspectionFieldRendererProps> = React.me
         />
         {photoError && (
           <div
-            className="mt-1 text-sm text-red-600"
+            className="mt-2 text-sm text-red-600"
             role="alert"
             aria-live="polite"
           >
@@ -268,6 +283,8 @@ const InspectionFieldRenderer: React.FC<InspectionFieldRendererProps> = React.me
     );
   };
 
+  const showPhotosBelowLabel = forceArabicPhotoUpload && enablePhotoUpload && Boolean(onPhotosChange);
+
   return (
     <div
       className={fieldWrapperClassName}
@@ -277,10 +294,11 @@ const InspectionFieldRenderer: React.FC<InspectionFieldRendererProps> = React.me
       data-testid={`field-renderer-${field.id}`}
     >
       {renderLabel()}
+      {showPhotosBelowLabel && renderPhotoUploadSection()}
       <div className="field-input-wrapper" {...accessibilityAttributes}>
         {fieldComponent}
       </div>
-      {renderPhotoUpload()}
+      {!showPhotosBelowLabel && renderPhotoUploadSection()}
       {renderHelpText()}
       {renderError()}
       
@@ -297,7 +315,10 @@ const InspectionFieldRenderer: React.FC<InspectionFieldRendererProps> = React.me
     prevProps.currentPhotos?.length === nextProps.currentPhotos?.length &&
     prevProps.error === nextProps.error &&
     prevProps.disabled === nextProps.disabled &&
-    prevProps.photoError === nextProps.photoError
+    prevProps.photoError === nextProps.photoError &&
+    prevProps.enablePhotoUpload === nextProps.enablePhotoUpload &&
+    prevProps.forceArabicPhotoUpload === nextProps.forceArabicPhotoUpload &&
+    prevProps.inspectionId === nextProps.inspectionId
   );
 });
 

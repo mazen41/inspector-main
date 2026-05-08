@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Download, Eye, FilePlus2, Search, Square, CheckCircle, XCircle, Play } from 'lucide-react';
+import { Calendar, Download, Eye, FilePlus2, Search, Square, CheckCircle, XCircle, Play, AlertCircle } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useGetManualExaminationsQuery } from '../store/api/manualExaminationApi';
 import type { RootState } from '../store';
@@ -11,6 +11,7 @@ const ManualExaminationsPage: React.FC = () => {
   const [filters, setFilters] = useState<ManualExaminationFilters>({ page: 1, per_page: 10 });
   const [searchTerm, setSearchTerm] = useState('');
   const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const token = useSelector((state: RootState) => state.auth.token);
   const currentLanguage = useSelector((state: RootState) => state.localization?.currentLanguage);
   const { data, isLoading, error } = useGetManualExaminationsQuery(filters);
@@ -27,27 +28,60 @@ const ManualExaminationsPage: React.FC = () => {
   const handleDownloadPdf = async (event: React.MouseEvent, examinationId: number, inspectionNumber: string) => {
     event.stopPropagation();
     setDownloadingPdfId(examinationId);
+    setDownloadError(null);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${examinationId}/download-pdf`, {
+      // Build URL using the same base as the RTK Query apiSlice:
+      // VITE_API_BASE_URL already includes "/api", so we append the versioned inspector path directly.
+      const url = `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${examinationId}/download-pdf`;
+
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
-          Accept: 'application/pdf',
+          Accept: 'application/pdf, application/json',
           Authorization: token ? `Bearer ${token}` : '',
           'App-Language': currentLanguage?.code || 'ar',
           'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
         },
       });
 
-      if (!response.ok) throw new Error('Failed to download PDF');
+      if (!response.ok) {
+        // Try to extract a meaningful error message from the JSON body
+        let errorMessage = `Download failed (HTTP ${response.status})`;
+        try {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const errorData = await response.json();
+            // Handle both {"error":{"message":"..."}} and {"result":false,"message":"..."}
+            errorMessage = errorData?.error?.message || errorData?.message || errorMessage;
+            // Translate the cryptic system-key error into something actionable
+            if (errorMessage === 'Request not found!') {
+              errorMessage = 'Authentication error: the app configuration key was rejected by the server. Please contact support.';
+            }
+          }
+        } catch {
+          // ignore JSON parse errors; use the default message
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Verify the server actually returned a PDF and not an error body
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/pdf')) {
+        throw new Error('Server did not return a PDF. Please try again later.');
+      }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const objectUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = url;
+      link.href = objectUrl;
       link.download = `manual-examination-report-${inspectionNumber}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to download PDF. Please try again.';
+      setDownloadError(message);
     } finally {
       setDownloadingPdfId(null);
     }
@@ -121,6 +155,19 @@ const ManualExaminationsPage: React.FC = () => {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-full overflow-hidden">
+      {downloadError && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <span className="flex-1">{downloadError}</span>
+          <button
+            onClick={() => setDownloadError(null)}
+            className="ml-auto flex-shrink-0 font-medium hover:text-red-900"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Manual Examinations</h1>

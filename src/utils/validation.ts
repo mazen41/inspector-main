@@ -515,6 +515,11 @@ export const isEmpty = (value: FieldValue): boolean => {
 };
 
 /**
+ * Whether the field counts as "answered" for section / form progress (aligned with isEmpty).
+ */
+export const isFieldValueAnswered = (value: FieldValue): boolean => !isEmpty(value);
+
+/**
  * Sanitize field value based on field type
  */
 export const sanitizeFieldValue = (field: InspectionField, value: FieldValue): FieldValue => {

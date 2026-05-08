@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle, AlertCircle, Clock, FileText, User, Car } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { Inspection, InspectionFormState } from '../../types/inspection';
+import { isFieldValueAnswered } from '../../utils/validation';
 
 interface InspectionFormSummaryProps {
   inspection: Inspection;
@@ -37,11 +38,9 @@ const InspectionFormSummary: React.FC<InspectionFormSummaryProps> = ({
           fieldsWithErrors++;
         }
 
-        const hasValue = fieldState?.value !== null && 
-                        fieldState?.value !== undefined && 
-                        fieldState?.value !== '';
+        const hasAnswered = fieldState ? isFieldValueAnswered(fieldState.value) : false;
 
-        if (hasValue) {
+        if (hasAnswered) {
           completedFields++;
           if (isRequired) {
             completedRequiredFields++;

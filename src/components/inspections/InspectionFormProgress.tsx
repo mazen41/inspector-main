@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle, AlertCircle, Clock, FileText } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { InspectionSection, InspectionFormState } from '../../types/inspection';
+import { isFieldValueAnswered } from '../../utils/validation';
 
 interface InspectionFormProgressProps {
   sections: InspectionSection[];
@@ -52,11 +53,9 @@ const InspectionFormProgress: React.FC<InspectionFormProgressProps> = ({
           sectionHasErrors = true;
         }
 
-        const hasValue = fieldState?.value !== null && 
-                        fieldState?.value !== undefined && 
-                        fieldState?.value !== '';
+        const hasAnswered = fieldState ? isFieldValueAnswered(fieldState.value) : false;
 
-        if (hasValue) {
+        if (hasAnswered) {
           sectionHasValues = true;
           if (isRequired) {
             sectionCompletedRequired++;

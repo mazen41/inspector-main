@@ -101,7 +101,7 @@ const InspectionFieldsRenderer: React.FC<InspectionFieldsRendererProps> = ({
       >
         {/* Section header with progress indicators */}
         <InspectionSectionHeader 
-          section={section}
+          section={{ ...section, fields: processedFields }}
           formState={formState}
         />
         

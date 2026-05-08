@@ -48,6 +48,7 @@ export interface ManualExaminationDetail extends ManualExaminationListItem {
   inspector_notes?: string | null;
   recommendations?: string | null;
   summary?: unknown;
+  metadata?: Record<string, unknown>;
   sections?: ManualExaminationSection[];
 }
 
@@ -56,6 +57,7 @@ export interface ManualExaminationSection {
   name: string;
   description?: string | null;
   order?: number;
+  section_photos?: Array<{ path: string; url?: string }>;
   fields: ManualExaminationField[];
 }
 
