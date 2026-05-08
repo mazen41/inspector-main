@@ -35,7 +35,12 @@ const baseQuery = fetchBaseQuery({
     }
 
     headers.set('Accept', 'application/json');
-    if (endpoint === 'uploadInspectionPhoto' || endpoint === 'batchUploadInspectionPhotos') {
+    if (
+      endpoint === 'uploadInspectionPhoto'
+      || endpoint === 'batchUploadInspectionPhotos'
+      || endpoint === 'uploadManualExaminationVehiclePhotos'
+      || endpoint === 'uploadManualExaminationSectionPhotos'
+    ) {
       headers.delete('Content-Type');
     } else {
       headers.set('Content-Type', 'application/json');

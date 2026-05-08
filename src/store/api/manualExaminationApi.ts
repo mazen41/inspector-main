@@ -8,6 +8,8 @@ import type {
   ManualExaminationDetailResponse,
   ManualExaminationFilters,
   ManualExaminationListResponse,
+  ManualExaminationPhotoUploadPayload,
+  ManualExaminationPhotoUploadResponse,
   State,
 } from '../../types';
 
@@ -35,6 +37,31 @@ export const manualExaminationApi = apiSlice.injectEndpoints({
         body,
       }),
       invalidatesTags: ['ManualExamination'],
+    }),
+    uploadManualExaminationVehiclePhotos: builder.mutation<ManualExaminationPhotoUploadResponse, ManualExaminationPhotoUploadPayload>({
+      query: ({ manualExaminationId, files }) => {
+        const formData = new FormData();
+        files.forEach((file) => formData.append('photos[]', file));
+        return {
+          url: `/manual-examinations/${manualExaminationId}/vehicle-photos`,
+          method: 'POST',
+          body: formData,
+        };
+      },
+    }),
+    uploadManualExaminationSectionPhotos: builder.mutation<ManualExaminationPhotoUploadResponse, ManualExaminationPhotoUploadPayload>({
+      query: ({ manualExaminationId, files, sectionId }) => {
+        const formData = new FormData();
+        files.forEach((file) => formData.append('photos[]', file));
+        if (sectionId !== undefined) {
+          formData.append('section_id', String(sectionId));
+        }
+        return {
+          url: `/manual-examinations/${manualExaminationId}/section-photos`,
+          method: 'POST',
+          body: formData,
+        };
+      },
     }),
     getCarBrands: builder.query<CarLookupItem[], void>({
       query: () => carsApiUrl('/brands'),
@@ -99,6 +126,8 @@ export const {
   useGetManualExaminationsQuery,
   useGetManualExaminationQuery,
   useCreateManualExaminationMutation,
+  useUploadManualExaminationVehiclePhotosMutation,
+  useUploadManualExaminationSectionPhotosMutation,
   useGetCarBrandsQuery,
   useGetCarModelsByBrandQuery,
   useGetCarCategoriesQuery,
