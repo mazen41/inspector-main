@@ -98,6 +98,16 @@ export interface ManualExaminationDetailResponse {
   message?: string;
 }
 
+export interface ManualExaminationPhotoUploadPayload {
+  manualExaminationId: number;
+  files: File[];
+  sectionId?: number;
+}
+
+export interface ManualExaminationPhotoUploadResponse {
+  message?: string;
+}
+
 export interface ManualExaminationCarPayload {
   vin: string;
   plate_number?: string;

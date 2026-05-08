@@ -10,6 +10,8 @@ import {
   useGetCarColorsQuery,
   useGetCarInspectionTypesQuery,
   useGetCarModelsByBrandQuery,
+  useUploadManualExaminationSectionPhotosMutation,
+  useUploadManualExaminationVehiclePhotosMutation,
 } from '../store/api/manualExaminationApi';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { useInspectionNavigation } from '../hooks/useInspectionNavigation';
@@ -138,6 +140,8 @@ const ManualExaminationCreatePage: React.FC = () => {
   const { data: colors = [], isLoading: isLoadingColors } = useGetCarColorsQuery();
   const { data: inspectionTypes = [], isLoading: isLoadingInspectionTypes, error: inspectionTypesError } = useGetCarInspectionTypesQuery();
   const [createManualExamination] = useCreateManualExaminationMutation();
+  const [uploadManualExaminationVehiclePhotos] = useUploadManualExaminationVehiclePhotosMutation();
+  const [uploadManualExaminationSectionPhotos] = useUploadManualExaminationSectionPhotosMutation();
   const selectedInspectionType = inspectionTypes.find((type) => String(type.id) === inspectionTypeId);
   const isLoading = isLoadingBrands || isLoadingModels || isLoadingCategories || isLoadingColors || isLoadingInspectionTypes;
 
@@ -373,28 +377,37 @@ const ManualExaminationCreatePage: React.FC = () => {
         .map((photo) => ({ fieldId: Number(fieldId), file: photo.file }))
     );
 
-    for (const upload of pendingUploads) {
-      const processedFile = await compressImageIfNeeded(upload.file, 2);
-      const formData = new FormData();
-      formData.append('photos[]', processedFile);
-      formData.append('field_id', String(upload.fieldId));
+    const fieldToSectionId = sections.reduce<Record<number, number>>((acc, section) => {
+      section.fields.forEach((field) => {
+        acc[field.id] = section.id;
+      });
+      return acc;
+    }, {});
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${inspectionId}/upload`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
-          'App-Language': currentLanguage?.code || 'ar',
-          'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
-        },
-        body: formData,
+    const groupedBySection = pendingUploads.reduce<Record<number, File[]>>((acc, upload) => {
+      const sectionId = fieldToSectionId[upload.fieldId];
+      if (!sectionId) return acc;
+      if (!acc[sectionId]) acc[sectionId] = [];
+      acc[sectionId].push(upload.file);
+      return acc;
+    }, {});
+
+    for (const [sectionIdKey, files] of Object.entries(groupedBySection)) {
+      const processedFiles = await Promise.all(files.map((file) => compressImageIfNeeded(file, 2)));
+      const sectionId = Number(sectionIdKey);
+      const response = await uploadManualExaminationSectionPhotos({
+        manualExaminationId: inspectionId,
+        sectionId,
+        files: processedFiles,
       });
 
-      if (!response.ok) {
-        throw new Error('تعذر رفع صور حقول الفحص.');
+      if ('error' in response) {
+        const status = Number(response.error.status || 0);
+        const backendMessage = (response.error as { data?: { message?: string } }).data?.message || 'تعذر رفع صور حقول الفحص.';
+        throw new Error(`تعذر رفع صور حقول الفحص. endpoint=/manual-examinations/${inspectionId}/section-photos method=POST status=${status} backend_message=${backendMessage}`);
       }
     }
-  }, [currentLanguage?.code, fieldPhotos, token]);
+  }, [fieldPhotos, sections, uploadManualExaminationSectionPhotos]);
 
   const uploadVehiclePhotos = useCallback(async (inspectionId: number) => {
     const files = vehiclePhotos
@@ -403,26 +416,18 @@ const ManualExaminationCreatePage: React.FC = () => {
 
     if (files.length === 0) return;
 
-    const formData = new FormData();
-    for (const file of files) {
-      formData.append('photos[]', await compressImageIfNeeded(file, 2));
-    }
-
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/manual-examinations/${inspectionId}/vehicle-photos`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        Authorization: token ? `Bearer ${token}` : '',
-        'App-Language': currentLanguage?.code || 'ar',
-        'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
-      },
-      body: formData,
+    const processedFiles = await Promise.all(files.map((file) => compressImageIfNeeded(file, 2)));
+    const response = await uploadManualExaminationVehiclePhotos({
+      manualExaminationId: inspectionId,
+      files: processedFiles,
     });
 
-    if (!response.ok) {
-      throw new Error('تعذر رفع صور المركبة.');
+    if ('error' in response) {
+      const status = Number(response.error.status || 0);
+      const backendMessage = (response.error as { data?: { message?: string } }).data?.message || 'تعذر رفع صور المركبة.';
+      throw new Error(`تعذر رفع صور المركبة. endpoint=/manual-examinations/${inspectionId}/vehicle-photos method=POST status=${status} backend_message=${backendMessage}`);
     }
-  }, [currentLanguage?.code, token, vehiclePhotos]);
+  }, [uploadManualExaminationVehiclePhotos, vehiclePhotos]);
 
   const handleCompletionSubmit = useCallback(async (completionData: InspectionCompletionData) => {
     try {
