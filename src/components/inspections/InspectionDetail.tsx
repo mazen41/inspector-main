@@ -25,6 +25,8 @@ import InspectionFieldValues from './InspectionFieldValues';
 import InspectionCompletionModal, { type InspectionCompletionData } from './InspectionCompletionModal';
 import PhotoPreviewGrid from './PhotoPreviewGrid';
 import PhotoModal from './PhotoModal';
+import { buildInspectorApiUrl } from '../../utils/apiUrl';
+import { downloadPdfFile, getPdfDownloadErrorMessage } from '../../utils/pdfDownload';
 import type { InspectionStatus, InspectionPhoto } from '../../types';
 import type { RootState } from '../../store';
 
@@ -163,7 +165,7 @@ const InspectionDetail: React.FC<InspectionDetailProps> = ({
 
   const getReportDownloadUrl = () => {
     if (inspection?.report_url) return inspection.report_url;
-    return `${import.meta.env.VITE_API_BASE_URL}/${import.meta.env.VITE_API_VERSION}/inspector/inspections/${inspectionId}/download-pdf`;
+    return buildInspectorApiUrl(`/inspections/${inspectionId}/download-pdf`);
   };
 
   const handleDownloadReport = async () => {
@@ -172,40 +174,14 @@ const InspectionDetail: React.FC<InspectionDetailProps> = ({
     setIsDownloadingReport(true);
     setDownloadError(null);
     try {
-      const response = await fetch(getReportDownloadUrl(), {
-        headers: {
-          Accept: 'application/pdf, application/json',
-          Authorization: token ? `Bearer ${token}` : '',
-          'App-Language': currentLanguage?.code || 'ar',
-          'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
-        },
+      await downloadPdfFile({
+        url: getReportDownloadUrl(),
+        filename: `inspection-report-${inspection.inspection_number}.pdf`,
+        token,
+        languageCode: currentLanguage?.code,
       });
-
-      if (!response.ok) {
-        let message = `Download failed (HTTP ${response.status})`;
-        try {
-          const contentType = response.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const errorData = await response.json();
-            message = errorData?.error?.message || errorData?.message || message;
-          }
-        } catch {
-          // Keep HTTP status message.
-        }
-        throw new Error(message);
-      }
-
-      const blob = await response.blob();
-      const objectUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = `inspection-report-${inspection.inspection_number}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(objectUrl);
     } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : 'Failed to download PDF. Please try again.');
+      setDownloadError(getPdfDownloadErrorMessage(err));
     } finally {
       setIsDownloadingReport(false);
     }

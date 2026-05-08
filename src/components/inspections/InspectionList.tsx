@@ -16,6 +16,7 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import type { InspectionFilters, InspectionStatus } from '../../types';
 import { buildInspectorApiUrl } from '../../utils/apiUrl';
+import { downloadPdfFile, getPdfDownloadErrorMessage } from '../../utils/pdfDownload';
 
 interface InspectionListProps {
   onInspectionSelect?: (inspectionId: number) => void;
@@ -98,47 +99,14 @@ const InspectionList: React.FC<InspectionListProps> = ({ onInspectionSelect }) =
     setDownloadingPdfId(inspectionId);
     setDownloadError(null);
     try {
-      const response = await fetch(buildInspectorApiUrl(`/inspections/${inspectionId}/download-pdf`), {
-        method: 'GET',
-        credentials: 'omit',
-        headers: {
-          Accept: 'application/pdf, application/json',
-          Authorization: token ? `Bearer ${token}` : '',
-          'App-Language': currentLanguage?.code || 'ar',
-          'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY,
-        },
+      await downloadPdfFile({
+        url: buildInspectorApiUrl(`/inspections/${inspectionId}/download-pdf`),
+        filename: `inspection-report-${inspectionNumber}.pdf`,
+        token,
+        languageCode: currentLanguage?.code,
       });
-
-      if (!response.ok) {
-        let message = `Download failed (HTTP ${response.status})`;
-        try {
-          const contentType = response.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const errorData = await response.json();
-            message = errorData?.error?.message || errorData?.message || message;
-          }
-        } catch {
-          // Keep the HTTP status message.
-        }
-        throw new Error(message);
-      }
-
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('application/pdf')) {
-        throw new Error('Server did not return a PDF. Please try again later.');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `inspection-report-${inspectionNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
     } catch (err: unknown) {
-      setDownloadError(err instanceof Error ? err.message : 'Failed to download PDF. Please try again.');
+      setDownloadError(getPdfDownloadErrorMessage(err));
     } finally {
       setDownloadingPdfId(null);
     }
