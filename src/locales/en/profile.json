@@ -6,6 +6,7 @@
     "accountSettings": "Account Settings",
     "security": "Security",
     "profilePicture": "Profile Picture",
+    "coverPhoto": "Cover Photo",
     "changePassword": "Change Password"
   },
   "fields": {
@@ -78,7 +79,9 @@
     "add": "Add",
     "updateSettings": "Update Settings",
     "geocodeAddress": "Find on Map",
-    "clearLocation": "Clear Location"
+    "clearLocation": "Clear Location",
+    "uploadCoverPhoto": "Upload Cover Photo",
+    "changeCoverPhoto": "Change Cover Photo"
   },
   "validation": {
     "required": "This field is required",
@@ -109,6 +112,10 @@
     "geocoding": "Finding location...",
     "loadingMap": "Loading map...",
     "mapInstructions": "Click on the map to set your business location, or drag the marker to adjust the position.",
-    "selectedLocation": "Selected location"
+    "selectedLocation": "Selected location",
+    "coverPhotoUploaded": "Cover photo updated successfully!",
+    "failedToUploadCoverPhoto": "Failed to upload cover photo. Please try again.",
+    "noCoverPhoto": "No cover photo uploaded",
+    "coverPhotoRecommendation": "Recommended size: 1200x400px. Max file size: 5MB."
   }
 }

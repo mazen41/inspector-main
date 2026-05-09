@@ -6,6 +6,7 @@
     "accountSettings": "إعدادات الحساب",
     "security": "الأمان",
     "profilePicture": "صورة الملف الشخصي",
+    "coverPhoto": "صورة الغلاف",
     "changePassword": "تغيير كلمة المرور"
   },
   "fields": {
@@ -78,7 +79,9 @@
     "add": "إضافة",
     "updateSettings": "تحديث الإعدادات",
     "geocodeAddress": "البحث في الخريطة",
-    "clearLocation": "مسح الموقع"
+    "clearLocation": "مسح الموقع",
+    "uploadCoverPhoto": "رفع صورة الغلاف",
+    "changeCoverPhoto": "تغيير صورة الغلاف"
   },
   "validation": {
     "required": "هذا الحقل مطلوب",
@@ -109,6 +112,10 @@
     "geocoding": "جاري البحث عن الموقع...",
     "loadingMap": "جاري تحميل الخريطة...",
     "mapInstructions": "انقر على الخريطة لتحديد موقع عملك، أو اسحب العلامة لضبط الموضع.",
-    "selectedLocation": "الموقع المحدد"
+    "selectedLocation": "الموقع المحدد",
+    "coverPhotoUploaded": "تم تحديث صورة الغلاف بنجاح!",
+    "failedToUploadCoverPhoto": "فشل في رفع صورة الغلاف. يرجى المحاولة مرة أخرى.",
+    "noCoverPhoto": "لم يتم رفع صورة غلاف",
+    "coverPhotoRecommendation": "الحجم المُوصى به: 1200x400 بكسل. الحد الأقصى لحجم الملف: 5 ميجابايت."
   }
 }

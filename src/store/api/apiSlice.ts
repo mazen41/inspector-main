@@ -40,6 +40,8 @@ const baseQuery = fetchBaseQuery({
       || endpoint === 'batchUploadInspectionPhotos'
       || endpoint === 'uploadManualExaminationVehiclePhotos'
       || endpoint === 'uploadManualExaminationSectionPhotos'
+      || endpoint === 'uploadAvatar'
+      || endpoint === 'uploadCoverPhoto'
     ) {
       headers.delete('Content-Type');
     } else {

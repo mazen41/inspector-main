@@ -44,6 +44,20 @@ export const profileApi = apiSlice.injectEndpoints({
       },
       invalidatesTags: ['Profile', 'Auth'],
     }),
+    uploadCoverPhoto: builder.mutation<{ data: { banner_image_url: string } }, File>({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append('cover_photo', file);
+        
+        return {
+          url: '/profile/cover-photo',
+          method: 'POST',
+          body: formData,
+          formData: true,
+        };
+      },
+      invalidatesTags: ['Profile', 'Auth'],
+    }),
     updateBusinessSettings: builder.mutation<{ data: InspectorProfile }, BusinessSettings>({
       query: (settings) => ({
         url: '/profile/business-settings',
@@ -69,6 +83,7 @@ export const {
   useUpdateProfileMutation,
   useChangePasswordMutation,
   useUploadAvatarMutation,
+  useUploadCoverPhotoMutation,
   useUpdateBusinessSettingsMutation,
   useGetCountriesQuery,
   useGetStatesByCountryQuery,

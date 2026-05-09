@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { 
   ProfileForm, 
   AvatarUpload, 
+  CoverPhotoUpload,
   PasswordChangeForm, 
   BusinessSettingsForm 
 } from '../components/profile';
 import { useTranslation } from '@/hooks';
 
-type TabType = 'profile' | 'avatar' | 'password' | 'business';
+type TabType = 'profile' | 'avatar' | 'cover' | 'password' | 'business';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('profile');
@@ -15,6 +16,7 @@ const ProfilePage: React.FC = () => {
   const tabs = [
     { id: 'profile' as TabType, label: t('profile.sections.personalInfo'), icon: '👤' },
     { id: 'avatar' as TabType, label: t('profile.sections.profilePicture'), icon: '📷' },
+    { id: 'cover' as TabType, label: t('profile.sections.coverPhoto'), icon: '🖼️' },
     { id: 'business' as TabType, label: t('profile.sections.businessSettings'), icon: '⚙️' },
     { id: 'password' as TabType, label: t('profile.sections.changePassword'), icon: '🔒' },
   ];
@@ -25,6 +27,8 @@ const ProfilePage: React.FC = () => {
         return <ProfileForm />;
       case 'avatar':
         return <AvatarUpload />;
+      case 'cover':
+        return <CoverPhotoUpload />;
       case 'business':
         return <BusinessSettingsForm />;
       case 'password':

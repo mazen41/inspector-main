@@ -109,9 +109,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
             <div className="px-4 py-4 border-b border-gray-200">
               <div className={`flex items-center `}>
                 <div className="flex-shrink-0">
-                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <User className="h-6 w-6 text-blue-600" />
-                  </div>
+                  {user.inspector?.image_url ? (
+                    <img
+                      src={user.inspector.image_url}
+                      alt={user.inspector?.shop_name || user.name}
+                      className="h-10 w-10 rounded-full object-cover border-2 border-blue-200"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                      <User className="h-6 w-6 text-blue-600" />
+                    </div>
+                  )}
                 </div>
                 <div className={isRTL ? 'mr-3' : 'ml-3'}>
                   <p className="text-sm font-medium text-gray-900 truncate">

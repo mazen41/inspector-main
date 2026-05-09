@@ -37,6 +37,8 @@ export interface InspectorProfile {
   country?: string;
   email_verified_at?: string;
   phone_verified_at?: string;
+  image_url?: string;
+  banner_image_url?: string;
   permissions?: {
     can_manual_examination?: boolean;
   };
