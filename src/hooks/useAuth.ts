@@ -30,6 +30,11 @@ export const useAuth = () => {
     isLoading: isCurrentUserLoading 
   } = useGetCurrentUserQuery(undefined, {
     skip: !token || !isAuthenticated,
+    // Keep permission changes (like manual examinations access) reflected quickly
+    // without requiring a logout/login.
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    pollingInterval: 60_000,
   });
 
   // Initialize authentication state on app load
