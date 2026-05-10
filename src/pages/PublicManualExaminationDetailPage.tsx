@@ -1,7 +1,6 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
-import { AlertCircle, Camera, Car, CheckCircle, ImageOff, Calendar } from 'lucide-react';
-import type { InspectionPhoto } from '../types';
+import { AlertCircle, Car, CheckCircle, Calendar } from 'lucide-react';
 
 const displayValue = (value: unknown) => {
   if (value === null || value === undefined || value === '') return 'N/A';
@@ -19,34 +18,6 @@ const formatDate = (dateString?: string | null) => {
     hour: '2-digit',
     minute: '2-digit',
   });
-};
-
-const SafeImage: React.FC<{ src?: string; alt: string; className?: string }> = ({ src, alt, className }) => {
-  const [hasError, setHasError] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  if (!src || hasError) {
-    return (
-      <div className={`flex flex-col items-center justify-center bg-gray-100 border border-gray-200 rounded ${className || ''}`} style={{ minHeight: '120px' }}>
-        <ImageOff className="h-8 w-8 text-gray-400 mb-2" />
-        <span className="text-xs text-gray-500 font-medium px-2 text-center">Image unavailable</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`relative ${className || ''}`}>
-      {isLoading && <div className="absolute inset-0 bg-gray-200 animate-pulse rounded" />}
-      <img
-        src={src}
-        alt={alt}
-        className={`w-full h-full object-cover transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-        onError={() => setHasError(true)}
-        onLoad={() => setIsLoading(false)}
-        loading="lazy"
-      />
-    </div>
-  );
 };
 
 interface PublicExamData {
