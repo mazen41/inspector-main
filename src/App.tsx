@@ -21,6 +21,7 @@ import {
   PaymentsPage,
   ProfilePage,
 } from './pages';
+import PublicManualExaminationDetailPage from './pages/PublicManualExaminationDetailPage';
 import { ROUTES } from './utils/constants';
 
 // Language Initialization Component
@@ -165,6 +166,12 @@ const AppRoutes: React.FC = () => {
             </Layout>
           </ProtectedRoute>
         }
+      />
+      
+      {/* Public route for QR code access - no authentication required */}
+      <Route
+        path="/public/manual-examinations/:id"
+        element={<PublicManualExaminationDetailPage />}
       />
       
       <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />

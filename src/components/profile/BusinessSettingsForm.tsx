@@ -294,37 +294,86 @@ const BusinessSettingsForm: React.FC = () => {
         {/* Location Picker */}
         
 
-        {/* Coordinates Display/Manual Entry */}
+        {/* Coordinates Display/Manual Entry with Auto Locate */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="latitude" className="block text-sm font-medium text-gray-700 mb-2">
-              {t('profile.fields.latitude')}
+              {t('profile.fields.latitude')} (خط الطول)
             </label>
-            <input
-              type="number"
-              id="latitude"
-              step="any"
-              value={formData.latitude || ''}
-              onChange={(e) => handleInputChange('latitude', e.target.value ? Number(e.target.value) : undefined)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={t('profile.placeholders.latitude')}
-            />
+            <div className="flex gap-2">
+              <input
+                type="number"
+                id="latitude"
+                step="any"
+                value={formData.latitude || ''}
+                onChange={(e) => handleInputChange('latitude', e.target.value ? Number(e.target.value) : undefined)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder={t('profile.placeholders.latitude')}
+              />
+            </div>
           </div>
 
           <div>
             <label htmlFor="longitude" className="block text-sm font-medium text-gray-700 mb-2">
-              {t('profile.fields.longitude')}
+              {t('profile.fields.longitude')} (خط العرض)
             </label>
-            <input
-              type="number"
-              id="longitude"
-              step="any"
-              value={formData.longitude || ''}
-              onChange={(e) => handleInputChange('longitude', e.target.value ? Number(e.target.value) : undefined)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={t('profile.placeholders.longitude')}
-            />
+            <div className="flex gap-2">
+              <input
+                type="number"
+                id="longitude"
+                step="any"
+                value={formData.longitude || ''}
+                onChange={(e) => handleInputChange('longitude', e.target.value ? Number(e.target.value) : undefined)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder={t('profile.placeholders.longitude')}
+              />
+            </div>
           </div>
+        </div>
+
+        {/* Auto Locate Button */}
+        <div className="flex justify-start">
+          <button
+            type="button"
+            onClick={async () => {
+              if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+              }
+              try {
+                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                  navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0,
+                  });
+                });
+                setFormData(prev => ({
+                  ...prev,
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                }));
+              } catch (err: unknown) {
+                const error = err as GeolocationPositionError;
+                let message = 'Failed to get location';
+                if (error.code === error.PERMISSION_DENIED) {
+                  message = 'Location permission denied. Please enable location access in your browser settings.';
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                  message = 'Location information is unavailable. Please check your device GPS.';
+                } else if (error.code === error.TIMEOUT) {
+                  message = 'The request to get your location timed out. Please try again.';
+                }
+                alert(message);
+              }
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm flex items-center gap-2"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Auto Locate / تحديد الموقع تلقائياً
+          </button>
         </div>
 
         {/* Working Hours */}
