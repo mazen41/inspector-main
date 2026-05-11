@@ -24,7 +24,7 @@
     "toDate": "إلى تاريخ"
   },
   "status": {
-    "pending":"تحت الإنتظار",
+    "pending": "تحت الإنتظار",
     "scheduled": "مجدول",
     "inProgress": "قيد التنفيذ",
     "completed": "مكتمل",
@@ -105,7 +105,6 @@
     }
   },
   "photos": {
-
     "dropPhotosHere": "إسقاط الصور هنا",
     "dragAndDrop": "اسحب وأسقط الصور هنا، أو انقر للتصفح",
     "useButtonsBelow": "استخدم الأزرار أدناه لإضافة الصور",
@@ -241,5 +240,29 @@
     "inspectionCancelled": "تم إلغاء الفحص",
     "photosRequired": "الصور مطلوبة لإكمال الفحص",
     "uploadFailed": "فشل في الرفع"
+  },
+  "manual": {
+    "title": "الفحوصات اليدوية",
+    "subtitle": "إنشاء ومراجعة فحوصات السيارات اليدوية.",
+    "createNew": "إنشاء جديد",
+    "searchPlaceholder": "ابحث برقم الفحص أو رقم الهيكل أو اللوحة أو الشركة أو الطراز",
+    "empty": "لا توجد فحوصات يدوية.",
+    "car": "السيارة",
+    "plate": "اللوحة",
+    "created": "تاريخ الإنشاء",
+    "downloadPdf": "تحميل PDF",
+    "downloading": "جارٍ التحميل...",
+    "view": "عرض",
+    "showing": "عرض",
+    "to": "إلى",
+    "of": "من",
+    "results": "نتيجة",
+    "previous": "السابق",
+    "next": "التالي",
+    "failedToLoad": "تعذر تحميل الفحوصات اليدوية.",
+    "downloadFailed": "تعذر تحميل ملف PDF. حاول مرة أخرى.",
+    "downloadFailedHttp": "فشل التحميل",
+    "authConfigError": "خطأ مصادقة: تم رفض مفتاح تهيئة التطبيق من الخادم. يرجى التواصل مع الدعم.",
+    "invalidPdfResponse": "الخادم لم يُرجع ملف PDF. يرجى المحاولة لاحقاً."
   }
 }
