@@ -48,6 +48,15 @@ const AvatarUpload: React.FC = () => {
 
   const profile = profileResponse?.data;
   const avatarUrl = profile?.inspector_profile?.image;
+  const normalizedAvatarUrl = (() => {
+    if (!avatarUrl) return avatarUrl;
+    const urlPath = avatarUrl.split('?')[0];
+    const pathParts = urlPath.split('/').filter(Boolean);
+    const imageName = pathParts[pathParts.length - 1];
+    const folderName = pathParts[pathParts.length - 2];
+    if (!folderName || !imageName) return avatarUrl;
+    return `https://samh.store/public/uploads/${folderName}/${imageName}`;
+  })();
   const normalizedAvatarUrl = avatarUrl?.includes('/public/uploads/')
     ? avatarUrl
     : avatarUrl?.replace('/uploads/', '/public/uploads/');
