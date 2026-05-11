@@ -264,5 +264,13 @@
     "downloadFailedHttp": "فشل التحميل",
     "authConfigError": "خطأ مصادقة: تم رفض مفتاح تهيئة التطبيق من الخادم. يرجى التواصل مع الدعم.",
     "invalidPdfResponse": "الخادم لم يُرجع ملف PDF. يرجى المحاولة لاحقاً."
+  },
+  "manualDetail": {
+    "reportTitle": "تقرير فحص المركبة",
+    "vehicleInfo": "معلومات المركبة",
+    "description": "الوصف",
+    "vehiclePhotos": "صور المركبة",
+    "vehiclePhoto": "صورة المركبة",
+    "noPhotos": "لا توجد صور متاحة"
   }
 }
