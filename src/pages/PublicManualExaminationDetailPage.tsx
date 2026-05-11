@@ -58,6 +58,11 @@ interface PublicExamData {
     name: string;
     description?: string;
     order: number;
+    section_photos?: Array<{
+      path?: string;
+      url?: string;
+      name?: string;
+    }>;
     fields: Array<{
       id: number;
       name: string;
@@ -71,8 +76,42 @@ interface PublicExamData {
       photos?: unknown;
     }>;
   }>;
-  photos?: unknown;
+  photos?: Array<{
+    type?: string;
+    name?: string;
+    path?: string;
+    url?: string;
+  }>;
 }
+
+type PhotoItem = {
+  url: string;
+  name: string;
+};
+
+const normalizePhotoItems = (items: unknown, fallbackLabel: string): PhotoItem[] => {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item, index) => {
+      if (typeof item === 'string') {
+        return { url: item, name: `${fallbackLabel} ${index + 1}` };
+      }
+
+      if (!item || typeof item !== 'object') return null;
+
+      const candidate = item as Record<string, unknown>;
+      const rawUrl = candidate.url ?? candidate.path;
+
+      if (!rawUrl || typeof rawUrl !== 'string') return null;
+
+      return {
+        url: rawUrl,
+        name: typeof candidate.name === 'string' && candidate.name.trim() ? candidate.name : `${fallbackLabel} ${index + 1}`,
+      };
+    })
+    .filter((item): item is PhotoItem => Boolean(item));
+};
 
 const PublicManualExaminationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -151,6 +190,8 @@ const PublicManualExaminationDetailPage: React.FC = () => {
     );
   }
 
+  const vehiclePhotos = normalizePhotoItems(examination.photos, 'Vehicle photo');
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -210,6 +251,31 @@ const PublicManualExaminationDetailPage: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {vehiclePhotos.length > 0 && (
+                <div className="px-6 pb-6">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-3">Vehicle Photos</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {vehiclePhotos.map((photo, index) => (
+                      <a
+                        key={`${photo.url}-${index}`}
+                        href={photo.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group block border border-slate-200 rounded-lg overflow-hidden"
+                      >
+                        <img
+                          src={photo.url}
+                          alt={photo.name}
+                          className="h-32 w-full object-cover group-hover:opacity-90 transition-opacity"
+                          loading="lazy"
+                        />
+                        <p className="text-xs text-gray-600 px-2 py-1 bg-white truncate">{photo.name}</p>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Inspection Fields/Sections */}
@@ -247,6 +313,33 @@ const PublicManualExaminationDetailPage: React.FC = () => {
                           </tbody>
                         </table>
                       </div>
+
+                      {(() => {
+                        const sectionPhotos = normalizePhotoItems(section.section_photos, `${section.name} photo`);
+                        if (sectionPhotos.length === 0) return null;
+
+                        return (
+                          <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {sectionPhotos.map((photo, index) => (
+                              <a
+                                key={`${photo.url}-${index}`}
+                                href={photo.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="group block border border-slate-200 rounded-lg overflow-hidden"
+                              >
+                                <img
+                                  src={photo.url}
+                                  alt={photo.name}
+                                  className="h-28 w-full object-cover group-hover:opacity-90 transition-opacity"
+                                  loading="lazy"
+                                />
+                                <p className="text-xs text-gray-600 px-2 py-1 bg-white truncate">{photo.name}</p>
+                              </a>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
