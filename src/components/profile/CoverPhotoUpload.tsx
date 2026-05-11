@@ -47,9 +47,15 @@ const CoverPhotoUpload: React.FC = () => {
 
   const profile = profileResponse?.data;
   const coverPhotoUrl = profile?.inspector_profile?.banner_image;
-  const normalizedCoverPhotoUrl = coverPhotoUrl?.includes('/public/uploads/')
-    ? coverPhotoUrl
-    : coverPhotoUrl?.replace('/uploads/', '/public/uploads/');
+  const normalizedCoverPhotoUrl = (() => {
+    if (!coverPhotoUrl) return coverPhotoUrl;
+    const urlPath = coverPhotoUrl.split('?')[0];
+    const pathParts = urlPath.split('/').filter(Boolean);
+    const imageName = pathParts[pathParts.length - 1];
+    const folderName = pathParts[pathParts.length - 2];
+    if (!folderName || !imageName) return coverPhotoUrl;
+    return `https://samh.store/public/uploads/${folderName}/${imageName}`;
+  })();
   const shopName = profile?.shop_name || profile?.inspector_profile?.shop_name || 'Center';
 
   return (
