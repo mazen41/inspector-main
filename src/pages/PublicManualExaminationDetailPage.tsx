@@ -1,6 +1,8 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { AlertCircle, Car, CheckCircle, Calendar } from 'lucide-react';
+import { AlertCircle, Car, CheckCircle, Calendar, ImageOff } from 'lucide-react';
+import { useTranslation } from '../hooks/useTranslation';
+import { normalizePhotos } from '../utils/manualExamPhotos';
 
 const displayValue = (value: unknown) => {
   if (value === null || value === undefined || value === '') return 'N/A';
@@ -47,6 +49,7 @@ interface PublicExamData {
     description?: string;
     category?: string;
     condition?: string;
+    photos?: unknown;
   };
   inspection_type?: {
     id: number;
@@ -84,40 +87,12 @@ interface PublicExamData {
   }>;
 }
 
-type PhotoItem = {
-  url: string;
-  name: string;
-};
-
-const normalizePhotoItems = (items: unknown, fallbackLabel: string): PhotoItem[] => {
-  if (!Array.isArray(items)) return [];
-
-  return items
-    .map((item, index) => {
-      if (typeof item === 'string') {
-        return { url: item, name: `${fallbackLabel} ${index + 1}` };
-      }
-
-      if (!item || typeof item !== 'object') return null;
-
-      const candidate = item as Record<string, unknown>;
-      const rawUrl = candidate.url ?? candidate.path;
-
-      if (!rawUrl || typeof rawUrl !== 'string') return null;
-
-      return {
-        url: rawUrl,
-        name: typeof candidate.name === 'string' && candidate.name.trim() ? candidate.name : `${fallbackLabel} ${index + 1}`,
-      };
-    })
-    .filter((item): item is PhotoItem => Boolean(item));
-};
-
 const PublicManualExaminationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [examination, setExamination] = React.useState<PublicExamData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     if (!id) return;
@@ -190,7 +165,7 @@ const PublicManualExaminationDetailPage: React.FC = () => {
     );
   }
 
-  const vehiclePhotos = normalizePhotoItems(examination.photos, 'Vehicle photo');
+  const vehiclePhotos = normalizePhotos(examination.photos || examination.car?.photos, t('inspections.manualDetail.vehiclePhoto'), t('inspections.manualDetail.vehiclePhotos'));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -200,14 +175,14 @@ const PublicManualExaminationDetailPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Vehicle Examination Report
+                {t('inspections.manualDetail.reportTitle')}
               </h1>
               <p className="text-gray-500 mt-1">
                 #{examination.inspection_number}
               </p>
             </div>
             <div className="inline-flex px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">
-              Completed
+              {examination.status_display || examination.status}
             </div>
           </div>
         </div>
@@ -220,7 +195,7 @@ const PublicManualExaminationDetailPage: React.FC = () => {
               <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
                 <div className="flex items-center gap-3">
                   <Car className="h-5 w-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-slate-900">Vehicle Information</h3>
+                  <h3 className="text-lg font-semibold text-slate-900">{t('inspections.manualDetail.vehicleInfo')}</h3>
                 </div>
               </div>
               <div className="p-6">
@@ -246,15 +221,15 @@ const PublicManualExaminationDetailPage: React.FC = () => {
                 </div>
                 {examination.car.description && (
                   <div className="mt-4 pt-4 border-t border-slate-100">
-                    <span className="text-sm font-medium text-gray-500">Description</span>
+                    <span className="text-sm font-medium text-gray-500">{t('inspections.manualDetail.description')}</span>
                     <p className="text-gray-900 mt-0.5 whitespace-pre-wrap">{examination.car.description}</p>
                   </div>
                 )}
               </div>
 
-              {vehiclePhotos.length > 0 && (
+              {vehiclePhotos.length > 0 ? (
                 <div className="px-6 pb-6">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-3">Vehicle Photos</h4>
+                  <h4 className="text-sm font-semibold text-slate-900 mb-3">{t('inspections.manualDetail.vehiclePhotos')}</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {vehiclePhotos.map((photo, index) => (
                       <a
@@ -266,13 +241,20 @@ const PublicManualExaminationDetailPage: React.FC = () => {
                       >
                         <img
                           src={photo.url}
-                          alt={photo.name}
+                          alt={photo.caption || t('inspections.manualDetail.vehiclePhoto')}
                           className="h-32 w-full object-cover group-hover:opacity-90 transition-opacity"
                           loading="lazy"
                         />
-                        <p className="text-xs text-gray-600 px-2 py-1 bg-white truncate">{photo.name}</p>
+                        <p className="text-xs text-gray-600 px-2 py-1 bg-white truncate">{photo.caption || t('inspections.manualDetail.vehiclePhoto')}</p>
                       </a>
                     ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="px-6 pb-6">
+                  <div className="flex flex-col items-center justify-center bg-gray-100 border border-gray-200 rounded p-6">
+                    <ImageOff className="h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500">{t('inspections.manualDetail.noPhotos')}</p>
                   </div>
                 </div>
               )}
@@ -315,7 +297,7 @@ const PublicManualExaminationDetailPage: React.FC = () => {
                       </div>
 
                       {(() => {
-                        const sectionPhotos = normalizePhotoItems(section.section_photos, `${section.name} photo`);
+                        const sectionPhotos = normalizePhotos(section.section_photos, `${section.name} photo`, section.name);
                         if (sectionPhotos.length === 0) return null;
 
                         return (
@@ -330,11 +312,11 @@ const PublicManualExaminationDetailPage: React.FC = () => {
                               >
                                 <img
                                   src={photo.url}
-                                  alt={photo.name}
+                                  alt={photo.caption || t('inspections.manualDetail.vehiclePhoto')}
                                   className="h-28 w-full object-cover group-hover:opacity-90 transition-opacity"
                                   loading="lazy"
                                 />
-                                <p className="text-xs text-gray-600 px-2 py-1 bg-white truncate">{photo.name}</p>
+                                <p className="text-xs text-gray-600 px-2 py-1 bg-white truncate">{photo.caption || t('inspections.manualDetail.vehiclePhoto')}</p>
                               </a>
                             ))}
                           </div>
@@ -416,7 +398,7 @@ const PublicManualExaminationDetailPage: React.FC = () => {
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Completed</p>
+                      <p className="text-sm font-medium text-gray-900">{examination.status_display || examination.status}</p>
                       <p className="text-xs text-gray-500">{formatDate(examination.completed_at)}</p>
                     </div>
                   </div>

@@ -268,5 +268,13 @@
     "downloadFailedHttp": "Download failed",
     "authConfigError": "Authentication error: the app configuration key was rejected by the server. Please contact support.",
     "invalidPdfResponse": "Server did not return a PDF. Please try again later."
+  },
+  "manualDetail": {
+    "reportTitle": "Vehicle Examination Report",
+    "vehicleInfo": "Vehicle Information",
+    "description": "Description",
+    "vehiclePhotos": "Vehicle Photos",
+    "vehiclePhoto": "Vehicle photo",
+    "noPhotos": "No photos available"
   }
 }
