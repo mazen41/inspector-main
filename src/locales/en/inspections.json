@@ -104,7 +104,7 @@
     }
   },
   "photos": {
-    "addPhotos": "Add photos to document this field",
+    "addPhotos": "Add Photos",
     "dropPhotosHere": "Drop photos here",
     "dragAndDrop": "Drag and drop photos here, or click to browse",
     "useButtonsBelow": "Use the buttons below to add photos",
@@ -123,8 +123,7 @@
     "dropAdditionalPhotos": "Drop additional photos here",
     "dragMorePhotos": "Drag more photos here or click to browse",
     "uploadDetails": "Upload Details:",
-    "add": "Add",
-    "addPhotos": "Add Photos"
+    "add": "Add"
   },
   "form": {
     "inspectionFields": "Inspection Fields",
@@ -179,11 +178,11 @@
       "unknownCustomer": "Unknown Customer"
     },
     "status": {
-      "peding":"Pending",
-      "completed":"Completed",
-      "cancelled":"Cancelled",
-      "scheduled":"Scheduled",
-      "unknown":"Unknown",
+      "peding": "Pending",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "scheduled": "Scheduled",
+      "unknown": "Unknown",
       "formComplete": "Form Complete",
       "needsAttention": "Needs Attention",
       "inProgress": "In Progress",
@@ -245,5 +244,29 @@
     "inspectionCancelled": "Inspection cancelled",
     "photosRequired": "Photos are required to complete the inspection",
     "uploadFailed": "Upload failed"
+  },
+  "manual": {
+    "title": "Manual Examinations",
+    "subtitle": "Create and review manual car examinations.",
+    "createNew": "Create New",
+    "searchPlaceholder": "Search by inspection number, VIN, plate, make, or model",
+    "empty": "No manual examinations found.",
+    "car": "Car",
+    "plate": "Plate",
+    "created": "Created",
+    "downloadPdf": "Download PDF",
+    "downloading": "Downloading...",
+    "view": "View",
+    "showing": "Showing",
+    "to": "to",
+    "of": "of",
+    "results": "results",
+    "previous": "Previous",
+    "next": "Next",
+    "failedToLoad": "Failed to load manual examinations.",
+    "downloadFailed": "Failed to download PDF. Please try again.",
+    "downloadFailedHttp": "Download failed",
+    "authConfigError": "Authentication error: the app configuration key was rejected by the server. Please contact support.",
+    "invalidPdfResponse": "Server did not return a PDF. Please try again later."
   }
 }
