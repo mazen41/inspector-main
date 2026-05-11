@@ -57,6 +57,9 @@ const AvatarUpload: React.FC = () => {
     if (!folderName || !imageName) return avatarUrl;
     return `https://samh.store/public/uploads/${folderName}/${imageName}`;
   })();
+  const normalizedAvatarUrl = avatarUrl?.includes('/public/uploads/')
+    ? avatarUrl
+    : avatarUrl?.replace('/uploads/', '/public/uploads/');
   const userName = profile?.shop_name || 'User';
 
   return (
