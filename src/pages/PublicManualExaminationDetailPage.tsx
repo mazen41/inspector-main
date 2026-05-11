@@ -89,7 +89,8 @@ const PublicManualExaminationDetailPage: React.FC = () => {
       
       try {
         const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
-        const response = await fetch(`${apiBaseUrl}/v2/inspector/manual-examinations/${id}`, {
+        const apiVersion = String(import.meta.env.VITE_API_VERSION || 'v2').replace(/^\/+|\/+$/g, '');
+        const response = await fetch(`${apiBaseUrl}/${apiVersion}/public/manual-examinations/${id}`, {
           headers: {
             'Accept': 'application/json',
             'System-Key': import.meta.env.VITE_BACKEND_SYSTEM_KEY || '',
