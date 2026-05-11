@@ -20,13 +20,11 @@ const AvatarUpload: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert(t('profile.messages.selectImageFile'));
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert(t('profile.messages.fileSizeLimit'));
       return;
@@ -40,7 +38,6 @@ const AvatarUpload: React.FC = () => {
       console.error('Failed to upload avatar:', error);
     }
 
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -48,6 +45,7 @@ const AvatarUpload: React.FC = () => {
 
   const profile = profileResponse?.data;
   const avatarUrl = profile?.inspector_profile?.image;
+
   const normalizedAvatarUrl = (() => {
     if (!avatarUrl) return avatarUrl;
     const urlPath = avatarUrl.split('?')[0];
@@ -57,9 +55,7 @@ const AvatarUpload: React.FC = () => {
     if (!folderName || !imageName) return avatarUrl;
     return `https://samh.store/public/uploads/${folderName}/${imageName}`;
   })();
-  const normalizedAvatarUrl = avatarUrl?.includes('/public/uploads/')
-    ? avatarUrl
-    : avatarUrl?.replace('/uploads/', '/public/uploads/');
+
   const userName = profile?.shop_name || 'User';
 
   return (
@@ -100,7 +96,7 @@ const AvatarUpload: React.FC = () => {
               </span>
             </div>
           )}
-          
+
           {isUploading && (
             <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
               <LoadingSpinner size="sm" />
@@ -115,7 +111,7 @@ const AvatarUpload: React.FC = () => {
           <p className="text-sm text-gray-500 mb-4">
             {t('profile.messages.avatarRecommendation')}
           </p>
-          
+
           <div className="flex space-x-3">
             <button
               onClick={handleFileSelect}
@@ -124,11 +120,10 @@ const AvatarUpload: React.FC = () => {
             >
               {isUploading ? t('profile.actions.uploading') : t('profile.actions.uploadNewPicture')}
             </button>
-            
+
             {avatarUrl && (
               <button
                 onClick={() => {
-                  // This would need to be implemented in the API
                   console.log('Remove avatar functionality would go here');
                 }}
                 className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
