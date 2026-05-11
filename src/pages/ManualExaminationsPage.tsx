@@ -5,9 +5,11 @@ import { useSelector } from 'react-redux';
 import { useGetManualExaminationsQuery } from '../store/api/manualExaminationApi';
 import type { RootState } from '../store';
 import type { ManualExaminationFilters } from '../types';
+import { useTranslation } from '../hooks/useTranslation';
 
 const ManualExaminationsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [filters, setFilters] = useState<ManualExaminationFilters>({ page: 1, per_page: 10 });
   const [searchTerm, setSearchTerm] = useState('');
   const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
@@ -46,7 +48,7 @@ const ManualExaminationsPage: React.FC = () => {
 
       if (!response.ok) {
         // Try to extract a meaningful error message from the JSON body
-        let errorMessage = `Download failed (HTTP ${response.status})`;
+        let errorMessage = `${t('inspections.manual.downloadFailedHttp', 'Download failed')} (HTTP ${response.status})`;
         try {
           const contentType = response.headers.get('content-type') || '';
           if (contentType.includes('application/json')) {
@@ -55,7 +57,7 @@ const ManualExaminationsPage: React.FC = () => {
             errorMessage = errorData?.error?.message || errorData?.message || errorMessage;
             // Translate the cryptic system-key error into something actionable
             if (errorMessage === 'Request not found!') {
-              errorMessage = 'Authentication error: the app configuration key was rejected by the server. Please contact support.';
+              errorMessage = t('inspections.manual.authConfigError', 'Authentication error: the app configuration key was rejected by the server. Please contact support.');
             }
           }
         } catch {
@@ -67,7 +69,7 @@ const ManualExaminationsPage: React.FC = () => {
       // Verify the server actually returned a PDF and not an error body
       const contentType = response.headers.get('content-type') || '';
       if (!contentType.includes('application/pdf')) {
-        throw new Error('Server did not return a PDF. Please try again later.');
+        throw new Error(t('inspections.manual.invalidPdfResponse', 'Server did not return a PDF. Please try again later.'));
       }
 
       const blob = await response.blob();
@@ -80,7 +82,7 @@ const ManualExaminationsPage: React.FC = () => {
       link.remove();
       window.URL.revokeObjectURL(objectUrl);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to download PDF. Please try again.';
+      const message = err instanceof Error ? err.message : t('inspections.manual.downloadFailed', 'Failed to download PDF. Please try again.');
       setDownloadError(message);
     } finally {
       setDownloadingPdfId(null);
@@ -144,7 +146,7 @@ const ManualExaminationsPage: React.FC = () => {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div className="bg-white rounded-lg shadow p-6 text-center text-red-600">
-          Failed to load manual examinations.
+          {t('inspections.manual.failedToLoad', 'Failed to load manual examinations.')}
         </div>
       </div>
     );
@@ -162,7 +164,7 @@ const ManualExaminationsPage: React.FC = () => {
           <button
             onClick={() => setDownloadError(null)}
             className="ml-auto flex-shrink-0 font-medium hover:text-red-900"
-            aria-label="Dismiss error"
+            aria-label={t('common.dismiss', 'Dismiss error')}
           >
             ✕
           </button>
@@ -170,8 +172,8 @@ const ManualExaminationsPage: React.FC = () => {
       )}
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Manual Examinations</h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">Create and review manual car examinations.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('inspections.manual.title', 'Manual Examinations')}</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">{t('inspections.manual.subtitle', 'Create and review manual car examinations.')}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <button
@@ -179,7 +181,7 @@ const ManualExaminationsPage: React.FC = () => {
             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
           >
             <FilePlus2 className="h-4 w-4" />
-            Create New
+            {t('inspections.manual.createNew', 'Create New')}
           </button>
         </div>
       </div>
@@ -190,7 +192,7 @@ const ManualExaminationsPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by inspection number, VIN, plate, make, or model"
+              placeholder={t('inspections.manual.searchPlaceholder', 'Search by inspection number, VIN, plate, make, or model')}
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -202,7 +204,7 @@ const ManualExaminationsPage: React.FC = () => {
           {examinations.length === 0 ? (
             <div className="p-6 sm:p-8 text-center text-gray-500">
               <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-sm sm:text-base">No manual examinations found.</p>
+              <p className="text-sm sm:text-base">{t('inspections.manual.empty', 'No manual examinations found.')}</p>
             </div>
           ) : (
             examinations.map((examination) => (
@@ -222,14 +224,14 @@ const ManualExaminationsPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                       <div>
-                        <span className="font-medium">Car:</span>{' '}
+                        <span className="font-medium">{t('inspections.manual.car', 'Car')}:</span>{' '}
                         {examination.car.make || 'N/A'} {examination.car.model || ''} {examination.car.year ? `(${examination.car.year})` : ''}
                       </div>
                       <div>
-                        <span className="font-medium">Plate:</span> {examination.car.plate_number || 'N/A'}
+                        <span className="font-medium">{t('inspections.manual.plate', 'Plate')}:</span> {examination.car.plate_number || 'N/A'}
                       </div>
                       <div>
-                        <span className="font-medium">Created:</span> {formatDate(examination.created_at)}
+                        <span className="font-medium">{t('inspections.manual.created', 'Created')}:</span> {formatDate(examination.created_at)}
                       </div>
                     </div>
                   </div>
@@ -240,14 +242,14 @@ const ManualExaminationsPage: React.FC = () => {
                       className="flex items-center justify-center gap-2 px-3 py-2 text-green-700 hover:bg-green-50 disabled:opacity-50 rounded-lg transition-colors text-sm w-full sm:w-auto"
                     >
                       <Download className="h-4 w-4" />
-                      {downloadingPdfId === examination.id ? 'Downloading...' : 'Download PDF'}
+                      {downloadingPdfId === examination.id ? t('inspections.manual.downloading', 'Downloading...') : t('inspections.manual.downloadPdf', 'Download PDF')}
                     </button>
                     <button
                       onClick={() => navigate(`/manual-examinations/${examination.id}`)}
                       className="flex items-center justify-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm w-full sm:w-auto"
                     >
                       <Eye className="h-4 w-4" />
-                      View
+                      {t('inspections.manual.view', 'View')}
                     </button>
                   </div>
                 </div>
@@ -260,7 +262,7 @@ const ManualExaminationsPage: React.FC = () => {
           <div className="p-4 sm:p-6 border-t border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
-                Showing {((meta.current_page - 1) * meta.per_page) + 1} to {Math.min(meta.current_page * meta.per_page, meta.total)} of {meta.total} results
+                {t('inspections.manual.showing', 'Showing')} {((meta.current_page - 1) * meta.per_page) + 1} {t('inspections.manual.to', 'to')} {Math.min(meta.current_page * meta.per_page, meta.total)} {t('inspections.manual.of', 'of')} {meta.total} {t('inspections.manual.results', 'results')}
               </div>
               <div className="flex items-center justify-center gap-2">
                 <button
@@ -268,7 +270,7 @@ const ManualExaminationsPage: React.FC = () => {
                   disabled={meta.current_page <= 1}
                   className="px-3 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                 >
-                  Previous
+                  {t('inspections.manual.previous', 'Previous')}
                 </button>
                 <span className="px-3 py-2 text-sm whitespace-nowrap">
                   {meta.current_page}/{meta.last_page}
@@ -278,7 +280,7 @@ const ManualExaminationsPage: React.FC = () => {
                   disabled={meta.current_page >= meta.last_page}
                   className="px-3 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                 >
-                  Next
+                  {t('inspections.manual.next', 'Next')}
                 </button>
               </div>
             </div>
