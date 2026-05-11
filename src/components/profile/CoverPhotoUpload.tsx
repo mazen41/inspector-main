@@ -47,6 +47,9 @@ const CoverPhotoUpload: React.FC = () => {
 
   const profile = profileResponse?.data;
   const coverPhotoUrl = profile?.inspector_profile?.banner_image;
+  const normalizedCoverPhotoUrl = coverPhotoUrl?.includes('/public/uploads/')
+    ? coverPhotoUrl
+    : coverPhotoUrl?.replace('/uploads/', '/public/uploads/');
   const shopName = profile?.shop_name || profile?.inspector_profile?.shop_name || 'Center';
 
   return (
@@ -77,7 +80,7 @@ const CoverPhotoUpload: React.FC = () => {
         <div className="relative w-full rounded-xl overflow-hidden border-2 border-dashed border-gray-300 bg-gray-50" style={{ aspectRatio: '3/1' }}>
           {coverPhotoUrl ? (
             <img
-              src={coverPhotoUrl}
+              src={normalizedCoverPhotoUrl}
               alt={`${shopName} cover`}
               className="w-full h-full object-cover"
             />
