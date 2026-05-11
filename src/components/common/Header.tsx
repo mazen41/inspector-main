@@ -3,7 +3,7 @@ import { Menu, X, LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
 import LanguageSelector from './LanguageSelector';
-import Logo from '../../assets/samh.svg';
+import { buildPublicAssetUrl } from '../../utils/assetUrl';
 interface HeaderProps {
   onMenuToggle?: () => void;
   isSidebarOpen?: boolean;
@@ -45,7 +45,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isSidebarOpen }) => {
                 <div className="h-8 w-8 rounded-lg flex items-center justify-center">
                   <img
                     className="h-[50px] w-100"
-                    src={Logo}
+                    src={buildPublicAssetUrl('assets/img/logo.png')}
                   />
                 </div>
               </div>

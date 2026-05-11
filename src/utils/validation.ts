@@ -573,6 +573,11 @@ export const sanitizeFieldValue = (field: InspectionField, value: FieldValue): F
     case 'select':
     case 'radio':
       if (isEmpty(value)) return '';
+      // Do NOT trim text and textarea values here because this is called on every change
+      // and trimming prevents users from entering spaces at the end of the input.
+      if (field.field_type === 'text' || field.field_type === 'textarea') {
+        return typeof value === 'string' ? value : String(value || '');
+      }
       return typeof value === 'string' ? value.trim() : String(value || '');
 
     default:

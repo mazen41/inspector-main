@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Trash2, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import type { InspectionPhoto } from '../../types/inspection';
+import { buildAssetUrl } from '../../utils/assetUrl';
 
 interface PhotoModalProps {
   photos: (InspectionPhoto & { fieldName?: string })[];
@@ -198,7 +199,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
 
     // Create a temporary link to download the image
     const link = document.createElement('a');
-    link.href = photo.url;
+    link.href = buildAssetUrl(photo.url);
     link.download = `inspection-photo-${photo.id}.jpg`;
     document.body.appendChild(link);
     link.click();
@@ -333,7 +334,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
 
             {/* Main image */}
             <img
-              src={currentPhoto.url}
+              src={buildAssetUrl(currentPhoto.url)}
               alt={currentPhoto.caption || `Inspection photo ${activeIndex + 1}`}
               className="max-w-full max-h-full object-contain rounded shadow-lg transition-transform duration-200"
               style={{
@@ -430,7 +431,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({
                     `}
                   >
                     <img
-                      src={photo.thumbnail_url || photo.url}
+                      src={buildAssetUrl(photo.thumbnail_url || photo.url)}
                       alt={`Thumbnail ${index + 1}`}
                       className="w-full h-full object-cover"
                     />

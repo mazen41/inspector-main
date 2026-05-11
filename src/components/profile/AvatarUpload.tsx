@@ -5,6 +5,8 @@ import { useTranslation } from '../../hooks/useTranslation';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
+import { buildAssetUrl } from '../../utils/assetUrl';
+
 const AvatarUpload: React.FC = () => {
   const { data: profileResponse } = useGetProfileQuery();
   const [uploadAvatar, { isLoading: isUploading, error: uploadError }] = useUploadAvatarMutation();
@@ -46,15 +48,8 @@ const AvatarUpload: React.FC = () => {
   const profile = profileResponse?.data;
   const avatarUrl = profile?.inspector_profile?.image;
 
-  const normalizedAvatarUrl = (() => {
-    if (!avatarUrl) return avatarUrl;
-    const urlPath = avatarUrl.split('?')[0];
-    const pathParts = urlPath.split('/').filter(Boolean);
-    const imageName = pathParts[pathParts.length - 1];
-    const folderName = pathParts[pathParts.length - 2];
-    if (!folderName || !imageName) return avatarUrl;
-    return `https://samh.store/public/uploads/${folderName}/${imageName}`;
-  })();
+  // Use the improved buildAssetUrl which handles domain mismatches and path extraction
+  const normalizedAvatarUrl = buildAssetUrl(avatarUrl);
 
   const userName = profile?.shop_name || 'User';
 

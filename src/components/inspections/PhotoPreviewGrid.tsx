@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Eye, Trash2 } from 'lucide-react';
 import type { InspectionPhoto } from '../../types/inspection';
+import { buildAssetUrl } from '../../utils/assetUrl';
 
 interface PhotoPreviewGridProps {
   photos: (InspectionPhoto & { fieldName?: string })[];
@@ -77,7 +78,7 @@ const PhotoPreviewGrid: React.FC<PhotoPreviewGridProps> = ({
           >
             {/* Photo Thumbnail */}
             <img
-              src={photo.thumbnail_url || photo.url}
+              src={buildAssetUrl(photo.thumbnail_url || photo.url)}
               alt={photo.caption || 'Inspection photo'}
               className={`
                 w-full h-full object-cover cursor-pointer transition-transform duration-200

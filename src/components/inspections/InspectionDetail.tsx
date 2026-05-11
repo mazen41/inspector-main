@@ -26,6 +26,7 @@ import InspectionCompletionModal, { type InspectionCompletionData } from './Insp
 import PhotoPreviewGrid from './PhotoPreviewGrid';
 import PhotoModal from './PhotoModal';
 import { buildInspectorApiUrl } from '../../utils/apiUrl';
+import { buildAssetUrl } from '../../utils/assetUrl';
 import { downloadPdfFile, getPdfDownloadErrorMessage } from '../../utils/pdfDownload';
 import type { InspectionStatus, InspectionPhoto } from '../../types';
 import type { RootState } from '../../store';
@@ -491,7 +492,7 @@ const InspectionDetail: React.FC<InspectionDetailProps> = ({
                 {inspection.photos.map((photo) => (
                   <div key={photo.id} className="relative">
                     <img
-                      src={photo.thumbnail_url || photo.url}
+                      src={buildAssetUrl(photo.thumbnail_url || photo.url)}
                       alt={photo.caption || 'Inspection photo'}
                       className="w-full h-16 sm:h-20 object-cover rounded-lg"
                     />

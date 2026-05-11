@@ -30,9 +30,30 @@ const getApiAssetBaseUrl = () => {
 
 export const resolvePhotoUrl = (value?: string | null) => {
   if (!value) return '';
-  if (/^(https?:|blob:|data:)/i.test(value)) return value;
-
+  
   const assetBaseUrl = getApiAssetBaseUrl();
+
+  if (/^(https?:|blob:|data:)/i.test(value)) {
+    // If it's an absolute URL, check if it's from our backend but with potentially wrong domain
+    if (value.startsWith('http')) {
+      try {
+        const url = new URL(value);
+        const rootOrigin = new URL(assetBaseUrl).origin;
+        
+        if (url.origin !== rootOrigin) {
+          // Look for common Laravel asset path markers
+          const match = url.pathname.match(/\/(public|storage|uploads|manual-examinations)\/(.+)$/);
+          if (match) {
+            return `${assetBaseUrl}${match[0]}`;
+          }
+        }
+      } catch {
+        // Fallback to original value
+      }
+    }
+    return value;
+  }
+
   const cleanPath = value.replace(/^\/+/, '');
 
   if (cleanPath.startsWith('car-inspections/') || cleanPath.startsWith('storage/')) {

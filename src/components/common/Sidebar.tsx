@@ -10,6 +10,7 @@ import {
 import { ROUTES } from '../../utils/constants';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
+import { buildAssetUrl } from '../../utils/assetUrl';
 
 interface NavigationItem {
   name: string;
@@ -70,6 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
   const location = useLocation();
   const { user } = useAuth();
   const { isRTL, t } = useTranslation();
+  const [imageError, setImageError] = React.useState(false);
   const canManualExamination = user?.inspector?.permissions?.can_manual_examination !== false;
   const navigation = getNavigation(t, canManualExamination);
 
@@ -109,11 +111,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
             <div className="px-4 py-4 border-b border-gray-200">
               <div className={`flex items-center `}>
                 <div className="flex-shrink-0">
-                  {user.inspector?.image_url ? (
+                  {user.inspector?.image_url && !imageError ? (
                     <img
-                      src={user.inspector.image_url}
+                      src={buildAssetUrl(user.inspector.image_url)}
                       alt={user.inspector?.shop_name || user.name}
                       className="h-10 w-10 rounded-full object-cover border-2 border-blue-200"
+                      onError={() => setImageError(true)}
                     />
                   ) : (
                     <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
