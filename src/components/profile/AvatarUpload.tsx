@@ -48,6 +48,9 @@ const AvatarUpload: React.FC = () => {
 
   const profile = profileResponse?.data;
   const avatarUrl = profile?.inspector_profile?.image;
+  const normalizedAvatarUrl = avatarUrl?.includes('/public/uploads/')
+    ? avatarUrl
+    : avatarUrl?.replace('/uploads/', '/public/uploads/');
   const userName = profile?.shop_name || 'User';
 
   return (
@@ -77,7 +80,7 @@ const AvatarUpload: React.FC = () => {
         <div className="relative">
           {avatarUrl ? (
             <img
-              src={avatarUrl}
+              src={normalizedAvatarUrl}
               alt={userName}
               className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
             />
